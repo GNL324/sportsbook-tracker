@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 
 const sportsbooks = ['DraftKings', 'BetMGM', 'theScore BET', 'BetRivers']
+const sports = ['NFL', 'NBA', 'MLB', 'NHL', 'Soccer', 'Tennis', 'Other']
 
 export default function CalculatorPage() {
   const [odds1, setOdds1] = useState('')
@@ -11,8 +12,12 @@ export default function CalculatorPage() {
   const [totalStake, setTotalStake] = useState('')
   const [sportsbook1, setSportsbook1] = useState('DraftKings')
   const [sportsbook2, setSportsbook2] = useState('BetMGM')
+  const [sport, setSport] = useState('NFL')
+  const [event, setEvent] = useState('')
+  const [betType, setBetType] = useState('Moneyline')
   const [results, setResults] = useState<any>(null)
   const [balances, setBalances] = useState<{[key: string]: number}>({})
+  const [showBetForm, setShowBetForm] = useState(false)
 
   useEffect(() => {
     const transactions = JSON.parse(localStorage.getItem('gnl_tracker_transactions') || '[]')
@@ -36,7 +41,6 @@ export default function CalculatorPage() {
     const d1 = o1 > 0 ? (o1 / 100) + 1 : 1 + (100 / Math.abs(o1))
     const d2 = o2 > 0 ? (o2 / 100) + 1 : 1 + (100 / Math.abs(o2))
 
-    // Max stake where both bets fit in balances
     const arbPercent = (1 / d1) + (1 / d2)
     const maxFromBal1 = bal1 * arbPercent / (1 / d1)
     const maxFromBal2 = bal2 * arbPercent / (1 / d2)
@@ -72,8 +76,11 @@ export default function CalculatorPage() {
       sb1: sportsbook1,
       sb2: sportsbook2,
       balance1: balances[sportsbook1] || 0,
-      balance2: balances[sportsbook2] || 0
+      balance2: balances[sportsbook2] || 0,
+      odds1,
+      odds2
     })
+    setShowBetForm(false)
   }
 
   const setMaxStake = () => {
@@ -116,6 +123,40 @@ export default function CalculatorPage() {
         .reduce((acc: number, t: any) => t.type === 'deposit' ? acc + t.amount : acc - t.amount, 0)
     })
     setBalances(sbBalances)
+  }
+
+  const logBet = () => {
+    if (!results || !event) {
+      alert('Please enter an event name')
+      return
+    }
+
+    const bets = JSON.parse(localStorage.getItem('gnl_bet_history') || '[]')
+    
+    const newBet = {
+      id: Date.now(),
+      date: new Date().toISOString().split('T')[0],
+      sport,
+      event,
+      betType,
+      odds1: results.odds1,
+      odds2: results.odds2,
+      stake1: parseFloat(results.stake1),
+      stake2: parseFloat(results.stake2),
+      profit: parseFloat(results.profit),
+      sportsbook1: results.sb1,
+      sportsbook2: results.sb2,
+      status: 'pending' as const
+    }
+    
+    bets.unshift(newBet)
+    localStorage.setItem('gnl_bet_history', JSON.stringify(bets))
+    alert('✅ Bet logged to history!')
+    
+    // Reset form
+    setShowBetForm(false)
+    setEvent('')
+    setBetType('Moneyline')
   }
 
   const maxStake = getMaxStake()
@@ -231,7 +272,7 @@ export default function CalculatorPage() {
               Calculate
             </button>
             <button
-              onClick={() => { setOdds1(''); setOdds2(''); setTotalStake(''); setResults(null); }}
+              onClick={() => { setOdds1(''); setOdds2(''); setTotalStake(''); setResults(null); setShowBetForm(false); }}
               className="px-6 py-3 bg-[#00d9ff]/20 border border-[#00d9ff]/50 text-[#00d9ff] font-bold rounded-lg hover:bg-[#00d9ff]/30 transition-all"
             >
               Reset
@@ -275,12 +316,88 @@ export default function CalculatorPage() {
               </div>
 
               {results.isArb && (
-                <button
-                  onClick={addToTracker}
-                  className="w-full mt-4 py-3 bg-gradient-to-r from-[#00ff88] to-[#00d9ff] text-black font-bold rounded-lg hover:scale-105 transition-all"
-                >
-                  💾 Add to Tracker
-                </button>
+                <>
+                  <button
+                    onClick={addToTracker}
+                    className="w-full mt-4 py-3 bg-gradient-to-r from-[#00ff88] to-[#00d9ff] text-black font-bold rounded-lg hover:scale-105 transition-all"
+                  >
+                    💾 Add Stakes to Tracker
+                  </button>
+
+                  <button
+                    onClick={() => setShowBetForm(!showBetForm)}
+                    className="w-full mt-3 py-3 bg-gradient-to-r from-[#00d9ff] to-[#00ff88] text-black font-bold rounded-lg hover:scale-105 transition-all"
+                  >
+                    📊 Log This Bet
+                  </button>
+
+                  {showBetForm && (
+                    <div className="mt-6 p-6 bg-black/30 rounded-xl border border-[#00d9ff]/30">
+                      <h4 className="text-lg font-bold text-[#00d9ff] mb-4">📝 Bet Details</h4>
+                      
+                      <div className="grid md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                          <label className="block text-gray-400 mb-2">Sport</label>
+                          <select
+                            value={sport}
+                            onChange={(e) => setSport(e.target.value)}
+                            className="w-full p-3 bg-black/30 border border-[#00d9ff]/30 rounded-lg text-white"
+                          >
+                            {sports.map(s => (
+                              <option key={s} value={s}>{s}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-gray-400 mb-2">Bet Type</label>
+                          <input
+                            type="text"
+                            value={betType}
+                            onChange={(e) => setBetType(e.target.value)}
+                            className="w-full p-3 bg-black/30 border border-[#00d9ff]/30 rounded-lg text-white"
+                            placeholder="Moneyline, Spread, Total"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="mb-4">
+                        <label className="block text-gray-400 mb-2">Event</label>
+                        <input
+                          type="text"
+                          value={event}
+                          onChange={(e) => setEvent(e.target.value)}
+                          className="w-full p-3 bg-black/30 border border-[#00d9ff]/30 rounded-lg text-white"
+                          placeholder="e.g., Lakers vs Celtics"
+                        />
+                      </div>
+
+                      <div className="p-4 bg-[#00d9ff]/10 rounded-lg mb-4">
+                        <div className="text-sm text-gray-400 mb-2">Bet Summary:</div>
+                        <div className="text-white">
+                          {results.sb1} (${results.stake1} @ {results.odds1}) + {results.sb2} (${results.stake2} @ {results.odds2})
+                        </div>
+                        <div className="text-[#00ff88] font-bold mt-1">
+                          Profit: ${results.profit} ({results.roi}%)
+                        </div>
+                      </div>
+
+                      <div className="flex gap-3">
+                        <button
+                          onClick={logBet}
+                          className="flex-1 py-3 bg-gradient-to-r from-[#00ff88] to-[#00d9ff] text-black font-bold rounded-lg hover:scale-105 transition-all"
+                        >
+                          ✅ Log Bet to History
+                        </button>
+                        <button
+                          onClick={() => setShowBetForm(false)}
+                          className="px-6 py-3 bg-[#00d9ff]/20 border border-[#00d9ff]/50 text-[#00d9ff] font-bold rounded-lg hover:bg-[#00d9ff]/30 transition-all"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
 
               {!results.isArb && (

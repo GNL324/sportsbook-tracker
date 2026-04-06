@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { utils, writeFile, read } from 'xlsx'
 
 interface Bet {
   id: number
@@ -84,6 +85,69 @@ export default function BetsPage() {
 
   const totalProfit = bets.reduce((acc, b) => acc + (b.status === 'won' ? b.profit : -b.stake1 - b.stake2), 0)
   const pendingBets = bets.filter(b => b.status === 'pending').length
+
+  const exportToExcel = () => {
+    const data = bets.map(b => ({
+      Date: b.date,
+      Sport: b.sport,
+      Event: b.event,
+      'Bet Type': b.betType,
+      'Sportsbook 1': b.sportsbook1,
+      'Odds 1': b.odds1,
+      'Stake 1': b.stake1,
+      'Sportsbook 2': b.sportsbook2,
+      'Odds 2': b.odds2,
+      'Stake 2': b.stake2,
+      'Profit ($)': b.profit,
+      Status: b.status.charAt(0).toUpperCase() + b.status.slice(1)
+    }))
+
+    const ws = utils.json_to_sheet(data)
+    const wb = utils.book_new()
+    utils.book_append_sheet(wb, ws, 'Bet History')
+    writeFile(wb, `bet-history-${new Date().toISOString().split('T')[0]}.xlsx`)
+  }
+
+  const importFromExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (evt) => {
+      try {
+        const bstr = evt.target?.result
+        const wb = read(bstr, { type: 'binary' })
+        const wsname = wb.SheetNames[0]
+        const ws = wb.Sheets[wsname]
+        const data = utils.sheet_to_json(ws) as any[]
+
+        const imported = data.map((row: any, index: number) => ({
+          id: Date.now() + index,
+          date: row.Date || new Date().toISOString().split('T')[0],
+          sport: row.Sport || 'Other',
+          event: row.Event || '',
+          betType: row['Bet Type'] || '',
+          odds1: row['Odds 1'] || '',
+          odds2: row['Odds 2'] || '',
+          stake1: parseFloat(row['Stake 1']) || 0,
+          stake2: parseFloat(row['Stake 2']) || 0,
+          profit: parseFloat(row['Profit ($)']) || 0,
+          sportsbook1: row['Sportsbook 1'] || 'DraftKings',
+          sportsbook2: row['Sportsbook 2'] || 'BetMGM',
+          status: (row.Status?.toLowerCase() || 'pending') as 'pending' | 'won' | 'lost'
+        }))
+
+        const updated = [...imported, ...bets]
+        setBets(updated)
+        localStorage.setItem('gnl_bet_history', JSON.stringify(updated))
+        alert(`✅ Imported ${imported.length} bets!`)
+      } catch (err) {
+        alert('❌ Error importing file. Please check the format.')
+      }
+    }
+    reader.readAsBinaryString(file)
+    e.target.value = ''
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1a1a2e] to-[#16213e] p-8">
@@ -222,6 +286,25 @@ export default function BetsPage() {
               >
                 Log Bet
               </button>
+            </div>
+
+            <div className="flex gap-4 mb-6">
+              <button
+                onClick={exportToExcel}
+                disabled={bets.length === 0}
+                className="flex-1 py-3 bg-gradient-to-r from-[#00ff88] to-[#00d9ff] text-black font-bold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 transition-all"
+              >
+                📥 Export to Excel
+              </button>
+              <label className="flex-1 py-3 bg-gradient-to-r from-[#00d9ff] to-[#00ff88] text-black font-bold rounded-lg hover:scale-105 transition-all cursor-pointer text-center">
+                📤 Import from Excel
+                <input
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={importFromExcel}
+                  className="hidden"
+                />
+              </label>
             </div>
 
             <div className="bg-black/30 backdrop-blur border border-[#00d9ff]/30 rounded-2xl p-6">

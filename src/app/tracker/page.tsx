@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { utils, writeFile, read, readFile } from 'xlsx'
 
 interface Transaction {
   id: number
@@ -86,6 +87,57 @@ export default function TrackerPage() {
     }, {} as {[key: string]: number})
 
   const totalBalance = Object.values(sportsbookBalances).reduce((a, b) => a + b, 0) + paypalBalance
+
+  const exportToExcel = () => {
+    const data = transactions.map(t => ({
+      Date: t.date,
+      Type: t.type.charAt(0).toUpperCase() + t.type.slice(1),
+      Amount: t.amount,
+      Sportsbook: t.sportsbook,
+      From: t.fromSportsbook || '',
+      Notes: t.notes
+    }))
+
+    const ws = utils.json_to_sheet(data)
+    const wb = utils.book_new()
+    utils.book_append_sheet(wb, ws, 'Transactions')
+    writeFile(wb, `bankroll-tracker-${new Date().toISOString().split('T')[0]}.xlsx`)
+  }
+
+  const importFromExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (evt) => {
+      try {
+        const bstr = evt.target?.result
+        const wb = read(bstr, { type: 'binary' })
+        const wsname = wb.SheetNames[0]
+        const ws = wb.Sheets[wsname]
+        const data = utils.sheet_to_json(ws) as any[]
+
+        const imported = data.map((row: any, index: number) => ({
+          id: Date.now() + index,
+          type: (row.Type?.toLowerCase() || 'deposit') as 'deposit' | 'withdrawal' | 'transfer' | 'paypal',
+          amount: parseFloat(row.Amount) || 0,
+          sportsbook: row.Sportsbook || 'DraftKings',
+          fromSportsbook: row.From || undefined,
+          date: row.Date || new Date().toISOString().split('T')[0],
+          notes: row.Notes || ''
+        }))
+
+        const updated = [...imported, ...transactions]
+        setTransactions(updated)
+        localStorage.setItem('gnl_tracker_transactions', JSON.stringify(updated))
+        alert(`✅ Imported ${imported.length} transactions!`)
+      } catch (err) {
+        alert('❌ Error importing file. Please check the format.')
+      }
+    }
+    reader.readAsBinaryString(file)
+    e.target.value = ''
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1a1a2e] to-[#16213e] p-8">
@@ -225,6 +277,25 @@ export default function TrackerPage() {
               >
                 Add Transaction
               </button>
+            </div>
+
+            <div className="flex gap-4 mb-6">
+              <button
+                onClick={exportToExcel}
+                disabled={transactions.length === 0}
+                className="flex-1 py-3 bg-gradient-to-r from-[#00ff88] to-[#00d9ff] text-black font-bold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 transition-all"
+              >
+                📥 Export to Excel
+              </button>
+              <label className="flex-1 py-3 bg-gradient-to-r from-[#00d9ff] to-[#00ff88] text-black font-bold rounded-lg hover:scale-105 transition-all cursor-pointer text-center">
+                📤 Import from Excel
+                <input
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={importFromExcel}
+                  className="hidden"
+                />
+              </label>
             </div>
 
             <div className="bg-black/30 backdrop-blur border border-[#00d9ff]/30 rounded-2xl p-6">

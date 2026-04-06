@@ -6,18 +6,32 @@ import Link from 'next/link'
 const sportsbooks = ['DraftKings', 'BetMGM', 'theScore BET', 'BetRivers']
 const sports = ['NFL', 'NBA', 'MLB', 'NHL', 'Soccer', 'Tennis', 'Other']
 
+const sportsbookMap: {[key: string]: string} = {
+  'M': 'BetMGM',
+  'R': 'BetRivers',
+  'S': 'theScore BET',
+  'D': 'DraftKings',
+  'BET': 'BetMGM',
+  'DK': 'DraftKings',
+  'DV': 'DraftKings',
+  'RS': 'BetRivers',
+  'SC': 'theScore BET'
+}
+
 export default function CalculatorPage() {
   const [odds1, setOdds1] = useState('')
   const [odds2, setOdds2] = useState('')
   const [totalStake, setTotalStake] = useState('')
   const [sportsbook1, setSportsbook1] = useState('DraftKings')
   const [sportsbook2, setSportsbook2] = useState('BetMGM')
-  const [sport, setSport] = useState('NFL')
+  const [sport, setSport] = useState('NBA')
   const [event, setEvent] = useState('')
-  const [betType, setBetType] = useState('Moneyline')
+  const [betType, setBetType] = useState('')
   const [results, setResults] = useState<any>(null)
   const [balances, setBalances] = useState<{[key: string]: number}>({})
   const [showBetForm, setShowBetForm] = useState(false)
+  const [showPasteWindow, setShowPasteWindow] = useState(false)
+  const [pasteInput, setPasteInput] = useState('')
 
   useEffect(() => {
     const transactions = JSON.parse(localStorage.getItem('gnl_tracker_transactions') || '[]')
@@ -29,6 +43,75 @@ export default function CalculatorPage() {
     })
     setBalances(sbBalances)
   }, [])
+
+  const parseBettingSlip = (text: string) => {
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l)
+    
+    let betType = ''
+    let event = ''
+    let sb1 = ''
+    let sb2 = ''
+    let playerBet1 = ''
+    let playerBet2 = ''
+    let odds1Val = ''
+    let odds2Val = ''
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i]
+      
+      // First line is usually bet type
+      if (i === 0 && line.includes('+')) {
+        betType = line
+      }
+      
+      // Game info with @
+      if (line.includes('@') && line.includes('-')) {
+        event = line.split('-')[0].trim()
+      }
+      
+      // Single letter sportsbook indicators
+      if (line.match(/^[MRSD]$/)) {
+        if (!sb1) sb1 = sportsbookMap[line] || ''
+        else sb2 = sportsbookMap[line] || ''
+      }
+      
+      // Over/Under lines with odds after
+      if (line.includes('Over') || line.includes('Under')) {
+        playerBet1 = playerBet1 || line
+        playerBet2 = playerBet2 || line
+      }
+      
+      // Odds (numbers starting with + or -)
+      if (line.match(/^[\+\-]?\d+$/)) {
+        if (!odds1Val) odds1Val = line
+        else if (!odds2Val) odds2Val = line
+      }
+      
+      // BET, DK, RS, SC indicators
+      if (line === 'BET' || line === 'DK' || line === 'DV' || line === 'RS' || line === 'SC') {
+        if (!sb1) sb1 = sportsbookMap[line] || ''
+        else sb2 = sportsbookMap[line] || ''
+      }
+    }
+
+    return { betType, event, sb1, sb2, odds1: odds1Val, odds2: odds2Val }
+  }
+
+  const handlePaste = () => {
+    const parsed = parseBettingSlip(pasteInput)
+    
+    if (parsed.odds1) setOdds1(parsed.odds1)
+    if (parsed.odds2) setOdds2(parsed.odds2)
+    if (parsed.sb1) setSportsbook1(parsed.sb1)
+    if (parsed.sb2) setSportsbook2(parsed.sb2)
+    if (parsed.betType) setBetType(parsed.betType)
+    if (parsed.event) setEvent(parsed.event)
+    
+    setShowPasteWindow(false)
+    setPasteInput('')
+    setResults(null)
+    setShowBetForm(false)
+  }
 
   const getMaxStake = () => {
     const bal1 = balances[sportsbook1] || 0
@@ -153,7 +236,6 @@ export default function CalculatorPage() {
     localStorage.setItem('gnl_bet_history', JSON.stringify(bets))
     alert('✅ Bet logged to history!')
     
-    // Reset form
     setShowBetForm(false)
     setEvent('')
     setBetType('Moneyline')
@@ -172,6 +254,43 @@ export default function CalculatorPage() {
         <p className="text-gray-400 mb-8">Calculate optimal bet stakes for guaranteed profit</p>
 
         <div className="bg-black/30 backdrop-blur border border-[#00d9ff]/30 rounded-2xl p-8">
+          <button
+            onClick={() => setShowPasteWindow(!showPasteWindow)}
+            className="w-full mb-6 py-3 bg-gradient-to-r from-[#00d9ff] to-[#00ff88] text-black font-bold rounded-lg hover:scale-105 transition-all"
+          >
+            📋 Paste Betting Slip
+          </button>
+
+          {showPasteWindow && (
+            <div className="mb-6 p-6 bg-black/30 rounded-xl border border-[#00d9ff]/30">
+              <h4 className="text-lg font-bold text-[#00d9ff] mb-4">📋 Paste Your Betting Slip</h4>
+              <p className="text-gray-400 text-sm mb-4">
+                Copy from any sportsbook page and paste below. Auto-detects: M (BetMGM), R (BetRivers), S (theScore), D (DraftKings)
+              </p>
+              <textarea
+                value={pasteInput}
+                onChange={(e) => setPasteInput(e.target.value)}
+                className="w-full p-3 bg-black/50 border border-[#00d9ff]/30 rounded-lg text-white font-mono text-sm mb-4"
+                rows={8}
+                placeholder="Paste your betting slip here..."
+              />
+              <div className="flex gap-3">
+                <button
+                  onClick={handlePaste}
+                  className="flex-1 py-3 bg-gradient-to-r from-[#00ff88] to-[#00d9ff] text-black font-bold rounded-lg hover:scale-105 transition-all"
+                >
+                  ✅ Auto-Populate
+                </button>
+                <button
+                  onClick={() => { setShowPasteWindow(false); setPasteInput('') }}
+                  className="px-6 py-3 bg-[#00d9ff]/20 border border-[#00d9ff]/50 text-[#00d9ff] font-bold rounded-lg hover:bg-[#00d9ff]/30 transition-all"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="grid md:grid-cols-2 gap-6 mb-6">
             <div>
               <label className="block text-gray-400 mb-2">Sportsbook 1</label>

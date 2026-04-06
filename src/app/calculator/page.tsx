@@ -15,7 +15,6 @@ export default function CalculatorPage() {
   const [balances, setBalances] = useState<{[key: string]: number}>({})
 
   useEffect(() => {
-    // Load balances from localStorage
     const transactions = JSON.parse(localStorage.getItem('gnl_tracker_transactions') || '[]')
     const sbBalances: {[key: string]: number} = {}
     sportsbooks.forEach(sb => {
@@ -25,6 +24,25 @@ export default function CalculatorPage() {
     })
     setBalances(sbBalances)
   }, [])
+
+  const getMaxStake = () => {
+    const bal1 = balances[sportsbook1] || 0
+    const bal2 = balances[sportsbook2] || 0
+    const o1 = parseFloat(odds1)
+    const o2 = parseFloat(odds2)
+
+    if (!o1 || !o2 || bal1 <= 0 || bal2 <= 0) return 0
+
+    const d1 = o1 > 0 ? (o1 / 100) + 1 : 1 + (100 / Math.abs(o1))
+    const d2 = o2 > 0 ? (o2 / 100) + 1 : 1 + (100 / Math.abs(o2))
+
+    // Max stake where both bets fit in balances
+    const arbPercent = (1 / d1) + (1 / d2)
+    const maxFromBal1 = bal1 * arbPercent / (1 / d1)
+    const maxFromBal2 = bal2 * arbPercent / (1 / d2)
+    
+    return Math.floor(Math.min(maxFromBal1, maxFromBal2))
+  }
 
   const calculateArb = () => {
     const o1 = parseFloat(odds1)
@@ -58,12 +76,18 @@ export default function CalculatorPage() {
     })
   }
 
+  const setMaxStake = () => {
+    const max = getMaxStake()
+    if (max > 0) {
+      setTotalStake(max.toString())
+    }
+  }
+
   const addToTracker = () => {
     if (!results) return
     
     const transactions = JSON.parse(localStorage.getItem('gnl_tracker_transactions') || '[]')
     
-    // Add stake1 as withdrawal from sportsbook1
     transactions.unshift({
       id: Date.now(),
       type: 'withdrawal',
@@ -73,7 +97,6 @@ export default function CalculatorPage() {
       notes: `Arb bet: ${results.sb2} stake $${results.stake2}`
     })
     
-    // Add stake2 as withdrawal from sportsbook2
     transactions.unshift({
       id: Date.now() + 1,
       type: 'withdrawal',
@@ -86,7 +109,6 @@ export default function CalculatorPage() {
     localStorage.setItem('gnl_tracker_transactions', JSON.stringify(transactions))
     alert('✅ Bets added to tracker!')
     
-    // Refresh balances
     const sbBalances: {[key: string]: number} = {}
     sportsbooks.forEach(sb => {
       sbBalances[sb] = transactions
@@ -95,6 +117,8 @@ export default function CalculatorPage() {
     })
     setBalances(sbBalances)
   }
+
+  const maxStake = getMaxStake()
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1a1a2e] to-[#16213e] p-8">
@@ -107,40 +131,6 @@ export default function CalculatorPage() {
         <p className="text-gray-400 mb-8">Calculate optimal bet stakes for guaranteed profit</p>
 
         <div className="bg-black/30 backdrop-blur border border-[#00d9ff]/30 rounded-2xl p-8">
-          <div className="grid md:grid-cols-2 gap-6 mb-6">
-            <div>
-              <label className="block text-gray-400 mb-2">Odds 1 (American)</label>
-              <input
-                type="number"
-                className="w-full p-3 bg-black/30 border border-[#00d9ff]/30 rounded-lg text-white focus:outline-none focus:border-[#00d9ff]"
-                placeholder="+150 or -110"
-                value={odds1}
-                onChange={(e) => setOdds1(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-gray-400 mb-2">Odds 2 (American)</label>
-              <input
-                type="number"
-                className="w-full p-3 bg-black/30 border border-[#00d9ff]/30 rounded-lg text-white focus:outline-none focus:border-[#00d9ff]"
-                placeholder="+150 or -110"
-                value={odds2}
-                onChange={(e) => setOdds2(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="mb-6">
-            <label className="block text-gray-400 mb-2">Total Stake ($)</label>
-            <input
-              type="number"
-              className="w-full p-3 bg-black/30 border border-[#00d9ff]/30 rounded-lg text-white focus:outline-none focus:border-[#00d9ff]"
-              placeholder="100"
-              value={totalStake}
-              onChange={(e) => setTotalStake(e.target.value)}
-            />
-          </div>
-
           <div className="grid md:grid-cols-2 gap-6 mb-6">
             <div>
               <label className="block text-gray-400 mb-2">Sportsbook 1</label>
@@ -184,6 +174,55 @@ export default function CalculatorPage() {
             </div>
           </div>
 
+          <div className="grid md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <label className="block text-gray-400 mb-2">Odds 1 (American)</label>
+              <input
+                type="number"
+                className="w-full p-3 bg-black/30 border border-[#00d9ff]/30 rounded-lg text-white focus:outline-none focus:border-[#00d9ff]"
+                placeholder="+150 or -110"
+                value={odds1}
+                onChange={(e) => setOdds1(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-gray-400 mb-2">Odds 2 (American)</label>
+              <input
+                type="number"
+                className="w-full p-3 bg-black/30 border border-[#00d9ff]/30 rounded-lg text-white focus:outline-none focus:border-[#00d9ff]"
+                placeholder="+150 or -110"
+                value={odds2}
+                onChange={(e) => setOdds2(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="mb-6">
+            <div className="flex justify-between items-center mb-2">
+              <label className="block text-gray-400">Total Stake ($)</label>
+              {maxStake > 0 && (
+                <button
+                  onClick={setMaxStake}
+                  className="text-sm px-3 py-1 bg-[#00d9ff]/20 border border-[#00d9ff]/50 text-[#00d9ff] rounded hover:bg-[#00d9ff]/30 transition-all"
+                >
+                  Set Max: ${maxStake}
+                </button>
+              )}
+            </div>
+            <input
+              type="number"
+              className="w-full p-3 bg-black/30 border border-[#00d9ff]/30 rounded-lg text-white focus:outline-none focus:border-[#00d9ff]"
+              placeholder="100"
+              value={totalStake}
+              onChange={(e) => setTotalStake(e.target.value)}
+            />
+            {maxStake > 0 && (
+              <div className="text-sm mt-1 text-[#00ff88]">
+                💰 Maximum possible bet: ${maxStake} (based on current balances)
+              </div>
+            )}
+          </div>
+
           <div className="flex gap-4 mb-8">
             <button
               onClick={calculateArb}
@@ -210,7 +249,7 @@ export default function CalculatorPage() {
                   <div className="text-gray-400 text-sm mb-1">{results.sb1}</div>
                   <div className="text-2xl font-bold text-[#00d9ff]">${results.stake1}</div>
                   <div className="text-sm text-gray-400">Balance: ${results.balance1.toFixed(2)}</div>
-                  {results.stake1 > results.balance1 && (
+                  {parseFloat(results.stake1) > results.balance1 && (
                     <div className="text-[#ff4757] text-sm mt-1">⚠️ Insufficient funds!</div>
                   )}
                 </div>
@@ -218,7 +257,7 @@ export default function CalculatorPage() {
                   <div className="text-gray-400 text-sm mb-1">{results.sb2}</div>
                   <div className="text-2xl font-bold text-[#00d9ff]">${results.stake2}</div>
                   <div className="text-sm text-gray-400">Balance: ${results.balance2.toFixed(2)}</div>
-                  {results.stake2 > results.balance2 && (
+                  {parseFloat(results.stake2) > results.balance2 && (
                     <div className="text-[#ff4757] text-sm mt-1">⚠️ Insufficient funds!</div>
                   )}
                 </div>

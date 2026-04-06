@@ -2,6 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   output: 'export',
+  distDir: 'dist',
   basePath: '/sportsbook-tracker',
   images: {
     unoptimized: true

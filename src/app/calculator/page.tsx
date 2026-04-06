@@ -59,6 +59,7 @@ export default function CalculatorPage() {
       if (line.match(/^\$\s*\d+\.?\d*$/)) continue
       if (line.match(/^\d+\.?\d*$/)) continue
       if (line.match(/^[NY]+$/i)) continue // Skip team abbreviations
+      if (line.match(/^[+-]?\d+\.?\d*$/)) continue // Skip plain numbers with optional +/-
       
       // First line with + is usually bet type
       if (i === 0 && line.includes('+') && !line.match(/^[\+\-]\d+$/)) {
@@ -70,23 +71,25 @@ export default function CalculatorPage() {
         event = line.split('-')[0].trim()
       }
       
-      // Single letter sportsbook indicators
-      if (line.match(/^[MRSD]$/)) {
+      // Single letter sportsbook indicators - check FIRST before other checks
+      if (line === 'M' || line === 'R' || line === 'S' || line === 'D') {
         const detectedSb = sportsbookMap[line] || ''
         if (detectedSb && !sportsbooks.includes(detectedSb)) {
           sportsbooks.push(detectedSb)
         }
+        continue // Skip rest of checks for this line
       }
       
       // BET, DK, RS, SC indicators
-      if (['BET', 'DK', 'DV', 'RS', 'SC'].includes(line)) {
+      if (line === 'BET' || line === 'DK' || line === 'DV' || line === 'RS' || line === 'SC') {
         const detectedSb = sportsbookMap[line] || ''
         if (detectedSb && !sportsbooks.includes(detectedSb)) {
           sportsbooks.push(detectedSb)
         }
+        continue // Skip rest of checks for this line
       }
       
-      // Odds (numbers starting with + or -)
+      // Odds (numbers starting with + or -) - must have + or - prefix
       if (line.match(/^[\+\-]\d+$/)) {
         odds.push(line)
       }

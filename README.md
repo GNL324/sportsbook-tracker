@@ -1,36 +1,148 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🎯 GNL Hub - Sportsbook Tracker & Workout Builder
 
-## Getting Started
+A comprehensive Next.js application for tracking sports betting arbitrage and building custom workout routines.
 
-First, run the development server:
+---
+
+## 🚀 Features
+
+### 🧮 Arbitrage Calculator
+- Calculate optimal bet stakes across sportsbooks
+- Support for American odds (+150, -110)
+- Real-time profit and ROI calculations
+- Guaranteed profit detection
+
+### 💰 Bankroll Tracker
+- Track deposits and withdrawals
+- Monitor balances across multiple sportsbooks:
+  - DraftKings
+  - BetMGM
+  - theScore BET
+  - BetRivers
+- Transaction history with notes
+
+### 📊 Bet History
+- Log all your arbitrage bets
+- Track bet status (Pending/Won/Lost)
+- Profit/loss summary
+- Export to Excel (coming soon)
+
+### 🏋️ Workout Routine Builder
+- Browse cardio and strength exercises
+- Build custom workout routines
+- Reorder exercises with drag-and-drop
+- Customize reps/duration per exercise
+- **Play Mode**: Guided workout with timers
+- Auto-rest between exercises
+- Save routines to localStorage
+
+---
+
+## 🛠️ Tech Stack
+
+- **Framework:** Next.js 14 (App Router)
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS
+- **Deployment:** GitHub Pages
+- **Data Persistence:** localStorage
+
+---
+
+## 🏃 Getting Started
+
+### Local Development
 
 ```bash
+# Install dependencies
+npm install
+
+# Run development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 📁 Project Structure
 
-## Learn More
+```
+sportsbook-tracker/
+├── src/
+│   ├── app/
+│   │   ├── page.tsx           # Home dashboard
+│   │   ├── calculator/        # Arbitrage calculator
+│   │   ├── tracker/           # Bankroll tracker
+│   │   ├── bets/              # Bet history
+│   │   ├── routine/           # Workout builder
+│   │   └── workout/           # Workout player
+│   ├── data/
+│   │   └── exercises.ts       # Exercise library
+│   └── components/            # Reusable components
+├── .github/
+│   └── workflows/
+│       └── deploy.yml         # GitHub Pages deployment
+├── next.config.js             # Next.js configuration
+├── tailwind.config.js         # Tailwind CSS config
+└── package.json
+```
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🌐 Live Demo
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**GitHub Pages:** https://gnl324.github.io/sportsbook-tracker/
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 📊 Pages
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Page | Route | Description |
+|------|-------|-------------|
+| Home | `/` | Dashboard with all tools |
+| Calculator | `/calculator` | Arbitrage bet calculator |
+| Tracker | `/tracker` | Bankroll management |
+| Bets | `/bets` | Bet history logging |
+| Routine | `/routine` | Workout builder |
+| Workout | `/workout` | Workout player with timers |
+
+---
+
+## 💾 Data Storage
+
+All data is stored in **localStorage**:
+
+- `gnl_tracker_transactions` - Bankroll transactions
+- `gnl_bet_history` - Bet history
+- `gnl_workout_routines` - Saved workout routines
+
+**Note:** Data is browser-specific. Clearing cache will remove data.
+
+---
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+---
+
+## 📄 License
+
+MIT License - feel free to use for personal projects!
+
+---
+
+## 🙏 Acknowledgments
+
+- Built with [Next.js](https://nextjs.org/)
+- Styled with [Tailwind CSS](https://tailwindcss.com/)
+- Deployed on [GitHub Pages](https://pages.github.com/)

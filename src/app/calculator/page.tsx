@@ -49,19 +49,16 @@ export default function CalculatorPage() {
     
     let betType = ''
     let event = ''
-    let sb1 = ''
-    let sb2 = ''
-    let odds1Val = ''
-    let odds2Val = ''
-    let currentSb = ''
-    let foundFirstOdds = false
+    let sportsbooks: string[] = []
+    let odds: string[] = []
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i]
       
-      // Skip dollar amounts and numbers that aren't odds
+      // Skip dollar amounts and plain numbers
       if (line.match(/^\$\s*\d+\.?\d*$/)) continue
       if (line.match(/^\d+\.?\d*$/)) continue
+      if (line.match(/^[NY]+$/i)) continue // Skip team abbreviations
       
       // First line with + is usually bet type
       if (i === 0 && line.includes('+') && !line.match(/^[\+\-]\d+$/)) {
@@ -73,49 +70,36 @@ export default function CalculatorPage() {
         event = line.split('-')[0].trim()
       }
       
-      // Single letter sportsbook indicators - this starts a new section
+      // Single letter sportsbook indicators
       if (line.match(/^[MRSD]$/)) {
         const detectedSb = sportsbookMap[line] || ''
-        if (!sb1) {
-          sb1 = detectedSb
-          currentSb = 'sb1'
-        } else if (detectedSb !== sb1) {
-          sb2 = detectedSb
-          currentSb = 'sb2'
+        if (detectedSb && !sportsbooks.includes(detectedSb)) {
+          sportsbooks.push(detectedSb)
         }
-        foundFirstOdds = false // Reset for new sportsbook section
       }
       
       // BET, DK, RS, SC indicators
       if (['BET', 'DK', 'DV', 'RS', 'SC'].includes(line)) {
         const detectedSb = sportsbookMap[line] || ''
-        if (!sb1) {
-          sb1 = detectedSb
-          currentSb = 'sb1'
-        } else if (detectedSb !== sb1 && !sb2) {
-          sb2 = detectedSb
-          currentSb = 'sb2'
+        if (detectedSb && !sportsbooks.includes(detectedSb)) {
+          sportsbooks.push(detectedSb)
         }
-        foundFirstOdds = false // Reset for new sportsbook section
       }
       
       // Odds (numbers starting with + or -)
       if (line.match(/^[\+\-]\d+$/)) {
-        if (currentSb === 'sb1' && !odds1Val) {
-          odds1Val = line
-        } else if (currentSb === 'sb2' && !odds2Val) {
-          odds2Val = line
-        } else if (!odds1Val) {
-          odds1Val = line
-          currentSb = 'sb1'
-        } else if (!odds2Val && line !== odds1Val) {
-          odds2Val = line
-          currentSb = 'sb2'
-        }
+        odds.push(line)
       }
     }
 
-    return { betType, event, sb1, sb2, odds1: odds1Val, odds2: odds2Val }
+    return {
+      betType,
+      event,
+      sb1: sportsbooks[0] || '',
+      sb2: sportsbooks[1] || '',
+      odds1: odds[0] || '',
+      odds2: odds[1] || ''
+    }
   }
 
   const handlePaste = () => {

@@ -49,61 +49,42 @@ export default function CalculatorPage() {
     
     let betType = ''
     let event = ''
-    let sb1 = ''
-    let sb2 = ''
-    let odds1Val = ''
-    let odds2Val = ''
+    let detectedSbs: string[] = []
+    let detectedOdds: string[] = []
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i]
       
-      // Skip dollar amounts
-      if (line.match(/^\$\s*\d+\.?\d*$/)) continue
+      // 1. Skip obviously irrelevant lines
+      if (line.match(/^\$\s*\d+\.?\d*$/)) continue // $100.00
+      if (line.match(/^\d+\.?\d*$/)) continue       // 100.00
+      if (line.match(/^[NYPLMC]+$/i)) continue     // Team codes
       
-      // Skip plain numbers (like 109.79)
-      if (line.match(/^\d+\.?\d*$/)) continue
-      
-      // Skip team abbreviations
-      if (line.match(/^[NYPLMC]+$/i)) continue
-      
-      // First line with + is usually bet type
+      // 2. Bet Type (First line with + that isn't just odds)
       if (i === 0 && line.includes('+') && !line.match(/^[-+]\d+$/)) {
         betType = line
       }
       
-      // Game info with @
+      // 3. Event (contains @)
       if (line.includes('@') && (line.includes('-') || line.match(/\d+\s*minutes?/i))) {
         event = line.split('-')[0].trim()
       }
       
-      // Single letter sportsbook indicators
-      if (line === 'M' || line === 'R' || line === 'S' || line === 'D') {
-        const detectedSb = sportsbookMap[line] || ''
-        if (detectedSb && !sb1) {
-          sb1 = detectedSb
-        } else if (detectedSb && sb1 && detectedSb !== sb1) {
-          sb2 = detectedSb
+      // 4. Sportsbook detection
+      // Check for single letters or known codes
+      if (line === 'M' || line === 'R' || line === 'S' || line === 'D' || 
+          line === 'BET' || line === 'DK' || line === 'DV' || line === 'RS' || line === 'SC') {
+        const sb = sportsbookMap[line]
+        if (sb && !detectedSbs.includes(sb)) {
+          detectedSbs.push(sb)
         }
-        continue
       }
       
-      // BET, DK, RS, SC indicators
-      if (line === 'BET' || line === 'DK' || line === 'DV' || line === 'RS' || line === 'SC') {
-        const detectedSb = sportsbookMap[line] || ''
-        if (detectedSb && !sb1) {
-          sb1 = detectedSb
-        } else if (detectedSb && sb1 && detectedSb !== sb1) {
-          sb2 = detectedSb
-        }
-        continue
-      }
-      
-      // Odds (must start with + or - followed by digits only)
+      // 5. Odds detection (MUST start with + or -)
       if (line.match(/^[-+]\d+$/)) {
-        if (!odds1Val) {
-          odds1Val = line
-        } else if (!odds2Val && line !== odds1Val) {
-          odds2Val = line
+        // Only add if it's different from the last one caught to avoid duplicates
+        if (detectedOdds.length === 0 || detectedOdds[detectedOdds.length - 1] !== line) {
+          detectedOdds.push(line)
         }
       }
     }
@@ -111,10 +92,10 @@ export default function CalculatorPage() {
     return {
       betType,
       event,
-      sb1,
-      sb2,
-      odds1: odds1Val,
-      odds2: odds2Val
+      sb1: detectedSbs[0] || '',
+      sb2: detectedSbs[1] || '',
+      odds1: detectedOdds[0] || '',
+      odds2: detectedOdds[1] || ''
     }
   }
 

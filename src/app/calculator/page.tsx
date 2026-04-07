@@ -55,10 +55,10 @@ export default function CalculatorPage() {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i]
       
-      // 1. Skip obviously irrelevant lines
-      if (line.match(/^\$\s*\d+\.?\d*$/)) continue // $100.00
-      if (line.match(/^\d+\.?\d*$/)) continue       // 100.00
-      if (line.match(/^[NYPLMC]+$/i)) continue     // Team codes
+      // 1. Skip obviously irrelevant lines (like currency symbols alone or team codes)
+      if (line === '$' || line === 'NY' || line === 'S') continue
+      if (line.match(/^\$\s*\d+\.?\d*$/)) continue 
+      if (line.match(/^\d+\.?\d*$/)) continue       
       
       // 2. Bet Type (First line with + that isn't just odds)
       if (i === 0 && line.includes('+') && !line.match(/^[-+]\d+$/)) {
@@ -71,7 +71,6 @@ export default function CalculatorPage() {
       }
       
       // 4. Sportsbook detection
-      // Check for single letters or known codes
       if (line === 'M' || line === 'R' || line === 'S' || line === 'D' || 
           line === 'BET' || line === 'DK' || line === 'DV' || line === 'RS' || line === 'SC') {
         const sb = sportsbookMap[line]
@@ -80,10 +79,10 @@ export default function CalculatorPage() {
         }
       }
       
-      // 5. Odds detection (MUST start with + or -)
+      // 5. Odds detection - VERY FLEXIBLE
+      // Match any line that is basically just an American Odd (+125, -110)
       if (line.match(/^[-+]\d+$/)) {
-        // Only add if it's different from the last one caught to avoid duplicates
-        if (detectedOdds.length === 0 || detectedOdds[detectedOdds.length - 1] !== line) {
+        if (!detectedOdds.includes(line)) {
           detectedOdds.push(line)
         }
       }

@@ -51,18 +51,22 @@ export default function CalculatorPage() {
     let event = ''
     let sportsbooks: string[] = []
     let odds: string[] = []
+    let currentSb = ''
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i]
       
-      // Skip dollar amounts and plain numbers
+      // Skip dollar amounts
       if (line.match(/^\$\s*\d+\.?\d*$/)) continue
+      
+      // Skip plain numbers (like 109.79)
       if (line.match(/^\d+\.?\d*$/)) continue
-      if (line.match(/^[NY]+$/i)) continue // Skip team abbreviations
-      if (line.match(/^[+-]?\d+\.?\d*$/)) continue // Skip plain numbers with optional +/-
+      
+      // Skip team abbreviations
+      if (line.match(/^[NYPLMC]+$/i)) continue
       
       // First line with + is usually bet type
-      if (i === 0 && line.includes('+') && !line.match(/^[\+\-]\d+$/)) {
+      if (i === 0 && line.includes('+') && !line.match(/^[-+]\d+$/)) {
         betType = line
       }
       
@@ -71,26 +75,32 @@ export default function CalculatorPage() {
         event = line.split('-')[0].trim()
       }
       
-      // Single letter sportsbook indicators - check FIRST before other checks
-      if (line === 'M' || line === 'R' || line === 'S' || line === 'D') {
+      // Single letter sportsbook indicators
+      if (['M', 'R', 'S', 'D'].includes(line)) {
         const detectedSb = sportsbookMap[line] || ''
-        if (detectedSb && !sportsbooks.includes(detectedSb)) {
-          sportsbooks.push(detectedSb)
+        if (detectedSb) {
+          currentSb = detectedSb
+          if (!sportsbooks.includes(detectedSb)) {
+            sportsbooks.push(detectedSb)
+          }
         }
-        continue // Skip rest of checks for this line
+        continue
       }
       
       // BET, DK, RS, SC indicators
-      if (line === 'BET' || line === 'DK' || line === 'DV' || line === 'RS' || line === 'SC') {
+      if (['BET', 'DK', 'DV', 'RS', 'SC'].includes(line)) {
         const detectedSb = sportsbookMap[line] || ''
-        if (detectedSb && !sportsbooks.includes(detectedSb)) {
-          sportsbooks.push(detectedSb)
+        if (detectedSb) {
+          currentSb = detectedSb
+          if (!sportsbooks.includes(detectedSb)) {
+            sportsbooks.push(detectedSb)
+          }
         }
-        continue // Skip rest of checks for this line
+        continue
       }
       
-      // Odds (numbers starting with + or -) - must have + or - prefix
-      if (line.match(/^[\+\-]\d+$/)) {
+      // Odds (must start with + or - followed by digits only)
+      if (line.match(/^[-+]\d+$/)) {
         odds.push(line)
       }
     }

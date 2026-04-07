@@ -49,9 +49,10 @@ export default function CalculatorPage() {
     
     let betType = ''
     let event = ''
-    let sportsbooks: string[] = []
-    let odds: string[] = []
-    let currentSb = ''
+    let sb1 = ''
+    let sb2 = ''
+    let odds1Val = ''
+    let odds2Val = ''
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i]
@@ -76,42 +77,44 @@ export default function CalculatorPage() {
       }
       
       // Single letter sportsbook indicators
-      if (['M', 'R', 'S', 'D'].includes(line)) {
+      if (line === 'M' || line === 'R' || line === 'S' || line === 'D') {
         const detectedSb = sportsbookMap[line] || ''
-        if (detectedSb) {
-          currentSb = detectedSb
-          if (!sportsbooks.includes(detectedSb)) {
-            sportsbooks.push(detectedSb)
-          }
+        if (detectedSb && !sb1) {
+          sb1 = detectedSb
+        } else if (detectedSb && sb1 && detectedSb !== sb1) {
+          sb2 = detectedSb
         }
         continue
       }
       
       // BET, DK, RS, SC indicators
-      if (['BET', 'DK', 'DV', 'RS', 'SC'].includes(line)) {
+      if (line === 'BET' || line === 'DK' || line === 'DV' || line === 'RS' || line === 'SC') {
         const detectedSb = sportsbookMap[line] || ''
-        if (detectedSb) {
-          currentSb = detectedSb
-          if (!sportsbooks.includes(detectedSb)) {
-            sportsbooks.push(detectedSb)
-          }
+        if (detectedSb && !sb1) {
+          sb1 = detectedSb
+        } else if (detectedSb && sb1 && detectedSb !== sb1) {
+          sb2 = detectedSb
         }
         continue
       }
       
       // Odds (must start with + or - followed by digits only)
       if (line.match(/^[-+]\d+$/)) {
-        odds.push(line)
+        if (!odds1Val) {
+          odds1Val = line
+        } else if (!odds2Val && line !== odds1Val) {
+          odds2Val = line
+        }
       }
     }
 
     return {
       betType,
       event,
-      sb1: sportsbooks[0] || '',
-      sb2: sportsbooks[1] || '',
-      odds1: odds[0] || '',
-      odds2: odds[1] || ''
+      sb1,
+      sb2,
+      odds1: odds1Val,
+      odds2: odds2Val
     }
   }
 

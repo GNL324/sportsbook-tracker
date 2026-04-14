@@ -38,21 +38,27 @@ export default function CalculatorPage() {
   }, [])
 
   const parseBettingSlip = (text: string) => {
-    const lines = text.split('\n').map(l => l.trim()).filter(l => l)
+    const lines = text.split('\n').map(l => l.trim().replace(/[\u200B-\u200D\uFEFF]/g, '')).filter(l => l)
     let betType = '', event = '', detectedSbs: string[] = [], detectedOdds: string[] = []
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i]
       if (line === '$' || line === 'NY' || line === 'S') continue
       if (line.match(/^\$\s*\d+\.?\d*$/)) continue
       if (line.match(/^\d+\.?\d*$/)) continue
-      if (i === 0 && line.includes('+') && !line.match(/^[-+]\d+$/)) betType = line
+      if (i === 0 && line.includes('+') && !line.match(/^[+\-\u2212]\d+$/)) betType = line
       if (line.includes('@') && (line.includes('-') || line.match(/\d+\s*minutes?/i))) event = line.split('-')[0].trim()
       if (line === 'M' || line === 'R' || line === 'S' || line === 'D' || line === 'BET' || line === 'DK' || line === 'DV' || line === 'RS' || line === 'SC') {
         const sb = sportsbookMap[line]
         if (sb && !detectedSbs.includes(sb)) detectedSbs.push(sb)
       }
-      const cleanedOdds = line.replace(/\s/g, '')
-      if (cleanedOdds.match(/^[-+]\d+$/) && !detectedOdds.includes(cleanedOdds)) detectedOdds.push(cleanedOdds)
+      // Odds: match lines that ARE just odds (e.g. +110, -105) after stripping all whitespace and unicode
+      const stripped = line.replace(/\s+/g, '').replace(/[\u200B-\u200D\uFEFF\u00A0]/g, '')
+      const oddsMatch = stripped.match(/^([+\-\u2212])(\d{2,4})$/)
+      if (oddsMatch) {
+        const sign = oddsMatch[1] === '\u2212' ? '-' : oddsMatch[1]
+        const oddsStr = sign + oddsMatch[2]
+        if (!detectedOdds.includes(oddsStr)) detectedOdds.push(oddsStr)
+      }
     }
     return { betType, event, sb1: detectedSbs[0] || '', sb2: detectedSbs[1] || '', odds1: detectedOdds[0] || '', odds2: detectedOdds[1] || '' }
   }
@@ -166,6 +172,17 @@ export default function CalculatorPage() {
                   </button>
                 </div>
                 <p className="text-[12px] text-[--text-muted] mb-3">Auto-detects: M (BetMGM), R (BetRivers), S (theScore), D (DraftKings)</p>
+                {pasteInput && (() => {
+                  const parsed = parseBettingSlip(pasteInput)
+                  return (
+                    <div className="mb-4 p-3 bg-[--bg-input] rounded-lg border border-dashed border-[--border] text-[11px] font-mono text-[--text-muted]">
+                      <div className="font-semibold text-[--text-secondary] mb-1">Preview:</div>
+                      <div>odds1: {parsed.odds1 || '—'} | odds2: {parsed.odds2 || '—'}</div>
+                      <div>sb1: {parsed.sb1 || '—'} | sb2: {parsed.sb2 || '—'}</div>
+                      <div>event: {parsed.event || '—'}</div>
+                    </div>
+                  )
+                })()}
                 <textarea
                   value={pasteInput}
                   onChange={(e) => setPasteInput(e.target.value)}
@@ -396,6 +413,9 @@ export default function CalculatorPage() {
           </div>
         </main>
       </div>
+      <footer className="border-t border-[--border] px-6 py-3 mt-auto">
+        <span className="text-[10px] text-[--text-muted]/50 font-mono">v1.2.0</span>
+      </footer>
     </div>
   )
 }

@@ -302,6 +302,9 @@ export default function TrackerPage() {
           </div>
         </main>
       </div>
+      <footer className="border-t border-[--border] px-6 py-3">
+        <span className="text-[10px] text-[--text-muted]/50 font-mono">v1.2.0</span>
+      </footer>
     </div>
   )
 }

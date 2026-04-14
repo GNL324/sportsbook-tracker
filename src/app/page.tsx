@@ -86,7 +86,7 @@ export default function HomePage() {
         <footer className="border-t border-[--border] px-6 py-4">
           <div className="max-w-6xl mx-auto flex items-center justify-between">
             <span className="text-[11px] text-[--text-muted] font-mono">GNL324</span>
-            <span className="text-[11px] text-[--text-muted] font-mono">v1.0</span>
+            <span className="text-[11px] text-[--text-muted] font-mono">v1.2.0</span>
           </div>
         </footer>
       </div>

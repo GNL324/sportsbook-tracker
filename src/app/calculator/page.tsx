@@ -6,16 +6,9 @@ import Link from 'next/link'
 const sportsbooks = ['DraftKings', 'BetMGM', 'theScore BET', 'BetRivers']
 const sports = ['NFL', 'NBA', 'MLB', 'NHL', 'Soccer', 'Tennis', 'Other']
 
-const sportsbookMap: {[key: string]: string} = {
-  'M': 'BetMGM',
-  'R': 'BetRivers',
-  'S': 'theScore BET',
-  'D': 'DraftKings',
-  'BET': 'BetMGM',
-  'DK': 'DraftKings',
-  'DV': 'DraftKings',
-  'RS': 'BetRivers',
-  'SC': 'theScore BET'
+const sportsbookMap: { [key: string]: string } = {
+  'M': 'BetMGM', 'R': 'BetRivers', 'S': 'theScore BET', 'D': 'DraftKings',
+  'BET': 'BetMGM', 'DK': 'DraftKings', 'DV': 'DraftKings', 'RS': 'BetRivers', 'SC': 'theScore BET'
 }
 
 export default function CalculatorPage() {
@@ -28,14 +21,14 @@ export default function CalculatorPage() {
   const [event, setEvent] = useState('')
   const [betType, setBetType] = useState('')
   const [results, setResults] = useState<any>(null)
-  const [balances, setBalances] = useState<{[key: string]: number}>({})
+  const [balances, setBalances] = useState<{ [key: string]: number }>({})
   const [showBetForm, setShowBetForm] = useState(false)
   const [showPasteWindow, setShowPasteWindow] = useState(false)
   const [pasteInput, setPasteInput] = useState('')
 
   useEffect(() => {
     const transactions = JSON.parse(localStorage.getItem('gnl_tracker_transactions') || '[]')
-    const sbBalances: {[key: string]: number} = {}
+    const sbBalances: { [key: string]: number } = {}
     sportsbooks.forEach(sb => {
       sbBalances[sb] = transactions
         .filter((t: any) => t.sportsbook === sb)
@@ -46,68 +39,31 @@ export default function CalculatorPage() {
 
   const parseBettingSlip = (text: string) => {
     const lines = text.split('\n').map(l => l.trim()).filter(l => l)
-    
-    let betType = ''
-    let event = ''
-    let detectedSbs: string[] = []
-    let detectedOdds: string[] = []
-
+    let betType = '', event = '', detectedSbs: string[] = [], detectedOdds: string[] = []
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i]
-      
-      // 1. Skip obviously irrelevant lines (like currency symbols alone or team codes)
       if (line === '$' || line === 'NY' || line === 'S') continue
-      if (line.match(/^\$\s*\d+\.?\d*$/)) continue 
-      if (line.match(/^\d+\.?\d*$/)) continue       
-      
-      // 2. Bet Type (First line with + that isn't just odds)
-      if (i === 0 && line.includes('+') && !line.match(/^[-+]\d+$/)) {
-        betType = line
-      }
-      
-      // 3. Event (contains @)
-      if (line.includes('@') && (line.includes('-') || line.match(/\d+\s*minutes?/i))) {
-        event = line.split('-')[0].trim()
-      }
-      
-      // 4. Sportsbook detection
-      if (line === 'M' || line === 'R' || line === 'S' || line === 'D' || 
-          line === 'BET' || line === 'DK' || line === 'DV' || line === 'RS' || line === 'SC') {
+      if (line.match(/^\$\s*\d+\.?\d*$/)) continue
+      if (line.match(/^\d+\.?\d*$/)) continue
+      if (i === 0 && line.includes('+') && !line.match(/^[-+]\d+$/)) betType = line
+      if (line.includes('@') && (line.includes('-') || line.match(/\d+\s*minutes?/i))) event = line.split('-')[0].trim()
+      if (line === 'M' || line === 'R' || line === 'S' || line === 'D' || line === 'BET' || line === 'DK' || line === 'DV' || line === 'RS' || line === 'SC') {
         const sb = sportsbookMap[line]
-        if (sb && !detectedSbs.includes(sb)) {
-          detectedSbs.push(sb)
-        }
+        if (sb && !detectedSbs.includes(sb)) detectedSbs.push(sb)
       }
-      
-      // 5. Odds detection - VERY FLEXIBLE
-      // Match any line that is basically just an American Odd (+125, -110)
-      if (line.match(/^[-+]\d+$/)) {
-        if (!detectedOdds.includes(line)) {
-          detectedOdds.push(line)
-        }
-      }
+      if (line.match(/^[-+]\d+$/) && !detectedOdds.includes(line)) detectedOdds.push(line)
     }
-
-    return {
-      betType,
-      event,
-      sb1: detectedSbs[0] || '',
-      sb2: detectedSbs[1] || '',
-      odds1: detectedOdds[0] || '',
-      odds2: detectedOdds[1] || ''
-    }
+    return { betType, event, sb1: detectedSbs[0] || '', sb2: detectedSbs[1] || '', odds1: detectedOdds[0] || '', odds2: detectedOdds[1] || '' }
   }
 
   const handlePaste = () => {
     const parsed = parseBettingSlip(pasteInput)
-    
     if (parsed.odds1) setOdds1(parsed.odds1)
     if (parsed.odds2) setOdds2(parsed.odds2)
     if (parsed.sb1) setSportsbook1(parsed.sb1)
     if (parsed.sb2) setSportsbook2(parsed.sb2)
     if (parsed.betType) setBetType(parsed.betType)
     if (parsed.event) setEvent(parsed.event)
-    
     setShowPasteWindow(false)
     setPasteInput('')
     setResults(null)
@@ -117,417 +73,327 @@ export default function CalculatorPage() {
   const getMaxStake = () => {
     const bal1 = balances[sportsbook1] || 0
     const bal2 = balances[sportsbook2] || 0
-    const o1 = parseFloat(odds1)
-    const o2 = parseFloat(odds2)
-
+    const o1 = parseFloat(odds1), o2 = parseFloat(odds2)
     if (!o1 || !o2 || bal1 <= 0 || bal2 <= 0) return 0
-
     const d1 = o1 > 0 ? (o1 / 100) + 1 : 1 + (100 / Math.abs(o1))
     const d2 = o2 > 0 ? (o2 / 100) + 1 : 1 + (100 / Math.abs(o2))
-
     const arbPercent = (1 / d1) + (1 / d2)
-    const maxFromBal1 = bal1 * arbPercent / (1 / d1)
-    const maxFromBal2 = bal2 * arbPercent / (1 / d2)
-    
-    return Math.floor(Math.min(maxFromBal1, maxFromBal2))
+    return Math.floor(Math.min(bal1 * arbPercent / (1 / d1), bal2 * arbPercent / (1 / d2)))
   }
 
   const calculateArb = () => {
-    const o1 = parseFloat(odds1)
-    const o2 = parseFloat(odds2)
-    const stake = parseFloat(totalStake)
-
+    const o1 = parseFloat(odds1), o2 = parseFloat(odds2), stake = parseFloat(totalStake)
     if (!o1 || !o2 || !stake) return
-
     const d1 = o1 > 0 ? (o1 / 100) + 1 : 1 + (100 / Math.abs(o1))
     const d2 = o2 > 0 ? (o2 / 100) + 1 : 1 + (100 / Math.abs(o2))
-
     const arbPercent = (1 / d1) + (1 / d2)
     const isArb = arbPercent < 1
-
     const stake1 = Math.round((stake * (1 / d1)) / arbPercent)
     const stake2 = Math.round((stake * (1 / d2)) / arbPercent)
     const profit = (stake1 * d1) - stake
     const roi = (profit / stake) * 100
-
     setResults({
-      stake1: stake1.toFixed(0),
-      stake2: stake2.toFixed(0),
-      profit: profit.toFixed(2),
-      roi: roi.toFixed(2),
-      isArb,
-      arbPercent: (arbPercent * 100).toFixed(2),
-      sb1: sportsbook1,
-      sb2: sportsbook2,
-      balance1: balances[sportsbook1] || 0,
-      balance2: balances[sportsbook2] || 0,
-      odds1,
-      odds2
+      stake1: stake1.toFixed(0), stake2: stake2.toFixed(0),
+      profit: profit.toFixed(2), roi: roi.toFixed(2),
+      isArb, arbPercent: (arbPercent * 100).toFixed(2),
+      sb1: sportsbook1, sb2: sportsbook2,
+      balance1: balances[sportsbook1] || 0, balance2: balances[sportsbook2] || 0,
+      odds1, odds2
     })
     setShowBetForm(false)
   }
 
-  const setMaxStake = () => {
-    const max = getMaxStake()
-    if (max > 0) {
-      setTotalStake(max.toString())
-    }
-  }
+  const setMaxStake = () => { const max = getMaxStake(); if (max > 0) setTotalStake(max.toString()) }
 
   const addToTracker = () => {
     if (!results) return
-    
     const transactions = JSON.parse(localStorage.getItem('gnl_tracker_transactions') || '[]')
-    
-    transactions.unshift({
-      id: Date.now(),
-      type: 'withdrawal',
-      amount: parseFloat(results.stake1),
-      sportsbook: results.sb1,
-      date: new Date().toISOString().split('T')[0],
-      notes: `Arb bet: ${results.sb2} stake $${results.stake2}`
-    })
-    
-    transactions.unshift({
-      id: Date.now() + 1,
-      type: 'withdrawal',
-      amount: parseFloat(results.stake2),
-      sportsbook: results.sb2,
-      date: new Date().toISOString().split('T')[0],
-      notes: `Arb bet: ${results.sb1} stake $${results.stake1}`
-    })
-    
+    transactions.unshift({ id: Date.now(), type: 'withdrawal', amount: parseFloat(results.stake1), sportsbook: results.sb1, date: new Date().toISOString().split('T')[0], notes: `Arb bet: ${results.sb2} stake $${results.stake2}` })
+    transactions.unshift({ id: Date.now() + 1, type: 'withdrawal', amount: parseFloat(results.stake2), sportsbook: results.sb2, date: new Date().toISOString().split('T')[0], notes: `Arb bet: ${results.sb1} stake $${results.stake1}` })
     localStorage.setItem('gnl_tracker_transactions', JSON.stringify(transactions))
-    alert('✅ Bets added to tracker!')
-    
-    const sbBalances: {[key: string]: number} = {}
-    sportsbooks.forEach(sb => {
-      sbBalances[sb] = transactions
-        .filter((t: any) => t.sportsbook === sb)
-        .reduce((acc: number, t: any) => t.type === 'deposit' ? acc + t.amount : acc - t.amount, 0)
-    })
+    alert('Bets added to tracker!')
+    const sbBalances: { [key: string]: number } = {}
+    sportsbooks.forEach(sb => { sbBalances[sb] = transactions.filter((t: any) => t.sportsbook === sb).reduce((acc: number, t: any) => t.type === 'deposit' ? acc + t.amount : acc - t.amount, 0) })
     setBalances(sbBalances)
   }
 
   const logBet = () => {
-    if (!results || !event) {
-      alert('Please enter an event name')
-      return
-    }
-
+    if (!results || !event) { alert('Please enter an event name'); return }
     const bets = JSON.parse(localStorage.getItem('gnl_bet_history') || '[]')
-    
-    const newBet = {
-      id: Date.now(),
-      date: new Date().toISOString().split('T')[0],
-      sport,
-      event,
-      betType,
-      odds1: results.odds1,
-      odds2: results.odds2,
-      stake1: parseFloat(results.stake1),
-      stake2: parseFloat(results.stake2),
-      profit: parseFloat(results.profit),
-      sportsbook1: results.sb1,
-      sportsbook2: results.sb2,
-      status: 'pending' as const
-    }
-    
-    bets.unshift(newBet)
+    bets.unshift({ id: Date.now(), date: new Date().toISOString().split('T')[0], sport, event, betType, odds1: results.odds1, odds2: results.odds2, stake1: parseFloat(results.stake1), stake2: parseFloat(results.stake2), profit: parseFloat(results.profit), sportsbook1: results.sb1, sportsbook2: results.sb2, status: 'pending' })
     localStorage.setItem('gnl_bet_history', JSON.stringify(bets))
-    alert('✅ Bet logged to history!')
-    
-    setShowBetForm(false)
-    setEvent('')
-    setBetType('Moneyline')
+    alert('Bet logged!')
+    setShowBetForm(false); setEvent(''); setBetType('Moneyline')
   }
 
   const maxStake = getMaxStake()
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1a1a2e] to-[#16213e] p-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-8">
-          <Link href="/" className="text-[#00d9ff] hover:underline">← Back to Home</Link>
-        </div>
-
-        <h1 className="text-3xl font-bold text-[#00d9ff] mb-2">🧮 Arbitrage Calculator</h1>
-        <p className="text-gray-400 mb-8">Calculate optimal bet stakes for guaranteed profit</p>
-
-        <div className="bg-black/30 backdrop-blur border border-[#00d9ff]/30 rounded-2xl p-8">
-          <button
-            onClick={() => setShowPasteWindow(!showPasteWindow)}
-            className="w-full mb-6 py-3 bg-gradient-to-r from-[#00d9ff] to-[#00ff88] text-black font-bold rounded-lg hover:scale-105 transition-all"
-          >
-            📋 Paste Betting Slip
-          </button>
-
-          {showPasteWindow && (
-            <div className="mb-6 p-6 bg-black/30 rounded-xl border border-[#00d9ff]/30">
-              <h4 className="text-lg font-bold text-[#00d9ff] mb-4">📋 Paste Your Betting Slip</h4>
-              <p className="text-gray-400 text-sm mb-4">
-                Copy from any sportsbook page and paste below. Auto-detects: M (BetMGM), R (BetRivers), S (theScore), D (DraftKings)
-              </p>
-              <textarea
-                value={pasteInput}
-                onChange={(e) => setPasteInput(e.target.value)}
-                className="w-full p-3 bg-black/50 border border-[#00d9ff]/30 rounded-lg text-white font-mono text-sm mb-4"
-                rows={8}
-                placeholder="Paste your betting slip here..."
-              />
-              <div className="flex gap-3">
-                <button
-                  onClick={handlePaste}
-                  className="flex-1 py-3 bg-gradient-to-r from-[#00ff88] to-[#00d9ff] text-black font-bold rounded-lg hover:scale-105 transition-all"
-                >
-                  ✅ Auto-Populate
-                </button>
-                <button
-                  onClick={() => { setShowPasteWindow(false); setPasteInput('') }}
-                  className="px-6 py-3 bg-[#00d9ff]/20 border border-[#00d9ff]/50 text-[#00d9ff] font-bold rounded-lg hover:bg-[#00d9ff]/30 transition-all"
-                >
-                  Cancel
-                </button>
+    <div className="noise-bg min-h-screen flex flex-col">
+      <div className="relative z-10 flex-1 flex flex-col">
+        {/* Header */}
+        <header className="border-b border-[--border] px-6 py-4">
+          <div className="max-w-5xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Link href="/" className="btn-ghost text-[--text-secondary] hover:text-[--text-primary] transition-colors">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+              </Link>
+              <div>
+                <h1 className="font-bold text-lg tracking-tight">Arbitrage Calculator</h1>
+                <p className="text-[12px] text-[--text-muted]">Calculate optimal stakes for guaranteed profit</p>
               </div>
             </div>
-          )}
-
-          <div className="grid md:grid-cols-2 gap-6 mb-6">
-            <div>
-              <label className="block text-gray-400 mb-2">Sportsbook 1</label>
-              <select
-                value={sportsbook1}
-                onChange={(e) => setSportsbook1(e.target.value)}
-                className="w-full p-3 bg-black/30 border border-[#00d9ff]/30 rounded-lg text-white focus:outline-none focus:border-[#00d9ff]"
-              >
-                {sportsbooks.map(sb => (
-                  <option key={sb} value={sb}>{sb}</option>
-                ))}
-              </select>
-              {balances[sportsbook1] !== undefined && (
-                <div className="text-sm mt-1">
-                  <span className="text-gray-400">Balance: </span>
-                  <span className={balances[sportsbook1] >= 0 ? 'text-[#00ff88]' : 'text-[#ff4757]'}>
-                    ${balances[sportsbook1].toFixed(2)}
-                  </span>
-                </div>
-              )}
-            </div>
-            <div>
-              <label className="block text-gray-400 mb-2">Sportsbook 2</label>
-              <select
-                value={sportsbook2}
-                onChange={(e) => setSportsbook2(e.target.value)}
-                className="w-full p-3 bg-black/30 border border-[#00d9ff]/30 rounded-lg text-white focus:outline-none focus:border-[#00d9ff]"
-              >
-                {sportsbooks.map(sb => (
-                  <option key={sb} value={sb}>{sb}</option>
-                ))}
-              </select>
-              {balances[sportsbook2] !== undefined && (
-                <div className="text-sm mt-1">
-                  <span className="text-gray-400">Balance: </span>
-                  <span className={balances[sportsbook2] >= 0 ? 'text-[#00ff88]' : 'text-[#ff4757]'}>
-                    ${balances[sportsbook2].toFixed(2)}
-                  </span>
-                </div>
-              )}
-            </div>
+            <button
+              onClick={() => setShowPasteWindow(!showPasteWindow)}
+              className="btn btn-secondary text-[13px]"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+              Paste Slip
+            </button>
           </div>
+        </header>
 
-          <div className="grid md:grid-cols-2 gap-6 mb-6">
-            <div>
-              <label className="block text-gray-400 mb-2">Odds 1 (American)</label>
-              <input
-                type="number"
-                className="w-full p-3 bg-black/30 border border-[#00d9ff]/30 rounded-lg text-white focus:outline-none focus:border-[#00d9ff]"
-                placeholder="+150 or -110"
-                value={odds1}
-                onChange={(e) => setOdds1(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-gray-400 mb-2">Odds 2 (American)</label>
-              <input
-                type="number"
-                className="w-full p-3 bg-black/30 border border-[#00d9ff]/30 rounded-lg text-white focus:outline-none focus:border-[#00d9ff]"
-                placeholder="+150 or -110"
-                value={odds2}
-                onChange={(e) => setOdds2(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="mb-6">
-            <div className="flex justify-between items-center mb-2">
-              <label className="block text-gray-400">Total Stake ($)</label>
-              {maxStake > 0 && (
-                <button
-                  onClick={setMaxStake}
-                  className="text-sm px-3 py-1 bg-[#00d9ff]/20 border border-[#00d9ff]/50 text-[#00d9ff] rounded hover:bg-[#00d9ff]/30 transition-all"
-                >
-                  Set Max: ${maxStake}
-                </button>
-              )}
-            </div>
-            <input
-              type="number"
-              className="w-full p-3 bg-black/30 border border-[#00d9ff]/30 rounded-lg text-white focus:outline-none focus:border-[#00d9ff]"
-              placeholder="100"
-              value={totalStake}
-              onChange={(e) => setTotalStake(e.target.value)}
-            />
-            {maxStake > 0 && (
-              <div className="text-sm mt-1 text-[#00ff88]">
-                💰 Maximum possible bet: ${maxStake} (based on current balances)
+        <main className="flex-1 px-6 py-8">
+          <div className="max-w-5xl mx-auto animate-in">
+            {/* Paste Window */}
+            {showPasteWindow && (
+              <div className="card p-6 mb-6 animate-in">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-sm">Paste Betting Slip</h3>
+                  <button onClick={() => { setShowPasteWindow(false); setPasteInput('') }} className="btn-ghost text-[--text-muted]">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
+                </div>
+                <p className="text-[12px] text-[--text-muted] mb-3">Auto-detects: M (BetMGM), R (BetRivers), S (theScore), D (DraftKings)</p>
+                <textarea
+                  value={pasteInput}
+                  onChange={(e) => setPasteInput(e.target.value)}
+                  className="input-field font-mono text-[12px] mb-4"
+                  rows={6}
+                  placeholder="Paste your betting slip here..."
+                />
+                <div className="flex gap-3">
+                  <button onClick={handlePaste} className="btn btn-primary text-[13px]">Auto-Populate</button>
+                  <button onClick={() => { setShowPasteWindow(false); setPasteInput('') }} className="btn btn-secondary text-[13px]">Cancel</button>
+                </div>
               </div>
             )}
-          </div>
 
-          <div className="flex gap-4 mb-8">
-            <button
-              onClick={calculateArb}
-              className="flex-1 px-6 py-3 bg-gradient-to-r from-[#00d9ff] to-[#00ff88] text-black font-bold rounded-lg hover:scale-105 transition-all"
-            >
-              Calculate
-            </button>
-            <button
-              onClick={() => { setOdds1(''); setOdds2(''); setTotalStake(''); setResults(null); setShowBetForm(false); }}
-              className="px-6 py-3 bg-[#00d9ff]/20 border border-[#00d9ff]/50 text-[#00d9ff] font-bold rounded-lg hover:bg-[#00d9ff]/30 transition-all"
-            >
-              Reset
-            </button>
-          </div>
-
-          {results && (
-            <div className={`p-6 rounded-xl ${results.isArb ? 'bg-[#00ff88]/10 border-[#00ff88]/50' : 'bg-[#ff4757]/10 border-[#ff4757]/50'} border`}>
-              <h3 className={`text-xl font-bold mb-4 ${results.isArb ? 'text-[#00ff88]' : 'text-[#ff4757]'}`}>
-                {results.isArb ? '✅ Arbitrage Opportunity!' : '❌ No Arbitrage'}
-              </h3>
-              
-              <div className="grid md:grid-cols-2 gap-4 mb-4">
-                <div className="p-4 bg-black/30 rounded-lg">
-                  <div className="text-gray-400 text-sm mb-1">{results.sb1}</div>
-                  <div className="text-2xl font-bold text-[#00d9ff]">${results.stake1}</div>
-                  <div className="text-sm text-gray-400">Balance: ${results.balance1.toFixed(2)}</div>
-                  {parseFloat(results.stake1) > results.balance1 && (
-                    <div className="text-[#ff4757] text-sm mt-1">⚠️ Insufficient funds!</div>
-                  )}
-                </div>
-                <div className="p-4 bg-black/30 rounded-lg">
-                  <div className="text-gray-400 text-sm mb-1">{results.sb2}</div>
-                  <div className="text-2xl font-bold text-[#00d9ff]">${results.stake2}</div>
-                  <div className="text-sm text-gray-400">Balance: ${results.balance2.toFixed(2)}</div>
-                  {parseFloat(results.stake2) > results.balance2 && (
-                    <div className="text-[#ff4757] text-sm mt-1">⚠️ Insufficient funds!</div>
-                  )}
-                </div>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-4 mb-4">
-                <div>
-                  <div className="text-gray-400 text-sm">Guaranteed Profit</div>
-                  <div className="text-2xl font-bold text-[#00ff88]">${results.profit}</div>
-                </div>
-                <div>
-                  <div className="text-gray-400 text-sm">ROI</div>
-                  <div className="text-2xl font-bold text-[#00ff88]">{results.roi}%</div>
-                </div>
-              </div>
-
-              {results.isArb && (
-                <>
-                  <button
-                    onClick={addToTracker}
-                    className="w-full mt-4 py-3 bg-gradient-to-r from-[#00ff88] to-[#00d9ff] text-black font-bold rounded-lg hover:scale-105 transition-all"
-                  >
-                    💾 Add Stakes to Tracker
-                  </button>
-
-                  <button
-                    onClick={() => setShowBetForm(!showBetForm)}
-                    className="w-full mt-3 py-3 bg-gradient-to-r from-[#00d9ff] to-[#00ff88] text-black font-bold rounded-lg hover:scale-105 transition-all"
-                  >
-                    📊 Log This Bet
-                  </button>
-
-                  {showBetForm && (
-                    <div className="mt-6 p-6 bg-black/30 rounded-xl border border-[#00d9ff]/30">
-                      <h4 className="text-lg font-bold text-[#00d9ff] mb-4">📝 Bet Details</h4>
-                      
-                      <div className="grid md:grid-cols-2 gap-4 mb-4">
-                        <div>
-                          <label className="block text-gray-400 mb-2">Sport</label>
-                          <select
-                            value={sport}
-                            onChange={(e) => setSport(e.target.value)}
-                            className="w-full p-3 bg-black/30 border border-[#00d9ff]/30 rounded-lg text-white"
-                          >
-                            {sports.map(s => (
-                              <option key={s} value={s}>{s}</option>
-                            ))}
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-gray-400 mb-2">Bet Type</label>
-                          <input
-                            type="text"
-                            value={betType}
-                            onChange={(e) => setBetType(e.target.value)}
-                            className="w-full p-3 bg-black/30 border border-[#00d9ff]/30 rounded-lg text-white"
-                            placeholder="Moneyline, Spread, Total"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="mb-4">
-                        <label className="block text-gray-400 mb-2">Event</label>
+            <div className="grid lg:grid-cols-5 gap-6">
+              {/* Left: Input */}
+              <div className="lg:col-span-3 space-y-6">
+                {/* Odds Section */}
+                <div className="card p-6">
+                  <h3 className="text-[11px] font-semibold text-[--text-muted] uppercase tracking-wider mb-5">Odds Input</h3>
+                  <div className="grid grid-cols-2 gap-6">
+                    {/* Side 1 */}
+                    <div className="space-y-3">
+                      <select value={sportsbook1} onChange={(e) => setSportsbook1(e.target.value)} className="select-field text-[13px]">
+                        {sportsbooks.map(sb => <option key={sb} value={sb}>{sb}</option>)}
+                      </select>
+                      <div className="relative">
                         <input
-                          type="text"
-                          value={event}
-                          onChange={(e) => setEvent(e.target.value)}
-                          className="w-full p-3 bg-black/30 border border-[#00d9ff]/30 rounded-lg text-white"
-                          placeholder="e.g., Lakers vs Celtics"
+                          type="number"
+                          className="input-field text-center font-mono text-2xl font-bold py-4"
+                          placeholder="+150"
+                          value={odds1}
+                          onChange={(e) => setOdds1(e.target.value)}
                         />
                       </div>
-
-                      <div className="p-4 bg-[#00d9ff]/10 rounded-lg mb-4">
-                        <div className="text-sm text-gray-400 mb-2">Bet Summary:</div>
-                        <div className="text-white">
-                          {results.sb1} (${results.stake1} @ {results.odds1}) + {results.sb2} (${results.stake2} @ {results.odds2})
+                      {balances[sportsbook1] !== undefined && (
+                        <div className="text-center">
+                          <span className="text-[11px] text-[--text-muted]">Balance </span>
+                          <span className={`text-[12px] font-mono font-semibold ${balances[sportsbook1] >= 0 ? 'text-[--accent]' : 'text-[--danger]'}`}>
+                            ${balances[sportsbook1].toFixed(2)}
+                          </span>
                         </div>
-                        <div className="text-[#00ff88] font-bold mt-1">
-                          Profit: ${results.profit} ({results.roi}%)
-                        </div>
+                      )}
+                    </div>
+                    {/* Side 2 */}
+                    <div className="space-y-3">
+                      <select value={sportsbook2} onChange={(e) => setSportsbook2(e.target.value)} className="select-field text-[13px]">
+                        {sportsbooks.map(sb => <option key={sb} value={sb}>{sb}</option>)}
+                      </select>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          className="input-field text-center font-mono text-2xl font-bold py-4"
+                          placeholder="-110"
+                          value={odds2}
+                          onChange={(e) => setOdds2(e.target.value)}
+                        />
                       </div>
+                      {balances[sportsbook2] !== undefined && (
+                        <div className="text-center">
+                          <span className="text-[11px] text-[--text-muted]">Balance </span>
+                          <span className={`text-[12px] font-mono font-semibold ${balances[sportsbook2] >= 0 ? 'text-[--accent]' : 'text-[--danger]'}`}>
+                            ${balances[sportsbook2].toFixed(2)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
 
-                      <div className="flex gap-3">
-                        <button
-                          onClick={logBet}
-                          className="flex-1 py-3 bg-gradient-to-r from-[#00ff88] to-[#00d9ff] text-black font-bold rounded-lg hover:scale-105 transition-all"
-                        >
-                          ✅ Log Bet to History
-                        </button>
-                        <button
-                          onClick={() => setShowBetForm(false)}
-                          className="px-6 py-3 bg-[#00d9ff]/20 border border-[#00d9ff]/50 text-[#00d9ff] font-bold rounded-lg hover:bg-[#00d9ff]/30 transition-all"
-                        >
-                          Cancel
-                        </button>
+                {/* Stake Section */}
+                <div className="card p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-[11px] font-semibold text-[--text-muted] uppercase tracking-wider">Total Stake</h3>
+                    {maxStake > 0 && (
+                      <button onClick={setMaxStake} className="text-[11px] font-mono text-[--accent] hover:underline">
+                        MAX ${maxStake}
+                      </button>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[--text-muted] font-mono font-bold">$</span>
+                    <input
+                      type="number"
+                      className="input-field text-center font-mono text-3xl font-bold py-5 pl-8"
+                      placeholder="0"
+                      value={totalStake}
+                      onChange={(e) => setTotalStake(e.target.value)}
+                    />
+                  </div>
+                  <div className="flex gap-3 mt-5">
+                    <button onClick={calculateArb} className="btn btn-primary flex-1 py-3 text-[15px]">Calculate</button>
+                    <button onClick={() => { setOdds1(''); setOdds2(''); setTotalStake(''); setResults(null); setShowBetForm(false) }} className="btn btn-secondary px-6">Clear</button>
+                  </div>
+                </div>
+
+                {/* Results */}
+                {results && (
+                  <div className={`card p-6 animate-in ${results.isArb ? 'border-[--accent]/30' : 'border-[--danger]/30'}`}>
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className={`w-3 h-3 rounded-full ${results.isArb ? 'bg-[--accent]' : 'bg-[--danger]'}`}></div>
+                      <h3 className={`font-bold text-lg ${results.isArb ? 'text-[--accent]' : 'text-[--danger]'}`}>
+                        {results.isArb ? 'Arbitrage Found' : 'No Arbitrage'}
+                      </h3>
+                      <span className="ml-auto font-mono text-[12px] text-[--text-muted]">
+                        {results.isArb ? `${(100 - parseFloat(results.arbPercent)).toFixed(2)}% edge` : `${results.arbPercent}% (need <100%)`}
+                      </span>
+                    </div>
+
+                    {/* Stakes */}
+                    <div className="grid grid-cols-2 gap-4 mb-6">
+                      <div className="bg-[--bg-input] rounded-lg p-4">
+                        <div className="text-[11px] text-[--text-muted] mb-1">{results.sb1}</div>
+                        <div className="font-mono text-2xl font-bold">${results.stake1}</div>
+                        <div className="text-[11px] text-[--text-muted] mt-1">
+                          @ {results.odds1} · bal ${results.balance1.toFixed(2)}
+                        </div>
+                        {parseFloat(results.stake1) > results.balance1 && (
+                          <div className="text-[11px] text-[--danger] mt-1 font-semibold">Insufficient funds</div>
+                        )}
+                      </div>
+                      <div className="bg-[--bg-input] rounded-lg p-4">
+                        <div className="text-[11px] text-[--text-muted] mb-1">{results.sb2}</div>
+                        <div className="font-mono text-2xl font-bold">${results.stake2}</div>
+                        <div className="text-[11px] text-[--text-muted] mt-1">
+                          @ {results.odds2} · bal ${results.balance2.toFixed(2)}
+                        </div>
+                        {parseFloat(results.stake2) > results.balance2 && (
+                          <div className="text-[11px] text-[--danger] mt-1 font-semibold">Insufficient funds</div>
+                        )}
                       </div>
                     </div>
-                  )}
-                </>
-              )}
 
-              {!results.isArb && (
-                <p className="mt-4 text-[#ff4757] text-sm">
-                  Arb %: {results.arbPercent}% (needs to be under 100% for profit)
-                </p>
-              )}
+                    {/* Profit */}
+                    <div className="flex items-end justify-between mb-6 p-4 bg-[--bg-input] rounded-lg">
+                      <div>
+                        <div className="text-[11px] text-[--text-muted] mb-1">Guaranteed Profit</div>
+                        <div className="font-mono text-3xl font-bold text-[--accent]">${results.profit}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-[11px] text-[--text-muted] mb-1">ROI</div>
+                        <div className="font-mono text-2xl font-bold text-[--accent]">{results.roi}%</div>
+                      </div>
+                    </div>
+
+                    {results.isArb && (
+                      <div className="space-y-3">
+                        <button onClick={addToTracker} className="btn btn-primary w-full py-3">
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
+                          Add to Tracker
+                        </button>
+                        <button onClick={() => setShowBetForm(!showBetForm)} className="btn btn-secondary w-full py-3">
+                          Log This Bet
+                        </button>
+
+                        {showBetForm && (
+                          <div className="mt-4 p-5 bg-[--bg-input] rounded-lg border border-[--border] space-y-4 animate-in">
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="block text-[11px] text-[--text-muted] mb-1.5">Sport</label>
+                                <select value={sport} onChange={(e) => setSport(e.target.value)} className="select-field text-[13px]">
+                                  {sports.map(s => <option key={s} value={s}>{s}</option>)}
+                                </select>
+                              </div>
+                              <div>
+                                <label className="block text-[11px] text-[--text-muted] mb-1.5">Bet Type</label>
+                                <input type="text" value={betType} onChange={(e) => setBetType(e.target.value)} className="input-field text-[13px]" placeholder="Moneyline" />
+                              </div>
+                            </div>
+                            <div>
+                              <label className="block text-[11px] text-[--text-muted] mb-1.5">Event</label>
+                              <input type="text" value={event} onChange={(e) => setEvent(e.target.value)} className="input-field text-[13px]" placeholder="Lakers vs Celtics" />
+                            </div>
+                            <div className="flex gap-3">
+                              <button onClick={logBet} className="btn btn-primary flex-1 text-[13px]">Save</button>
+                              <button onClick={() => setShowBetForm(false)} className="btn btn-secondary text-[13px]">Cancel</button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Right: Quick Info */}
+              <div className="lg:col-span-2 space-y-4">
+                <div className="card p-5">
+                  <h3 className="text-[11px] font-semibold text-[--text-muted] uppercase tracking-wider mb-4">Balances</h3>
+                  <div className="space-y-2">
+                    {sportsbooks.map(sb => {
+                      const bal = balances[sb] || 0
+                      return (
+                        <div key={sb} className="flex items-center justify-between py-2 border-b border-[--border] last:border-0">
+                          <span className="text-[13px] text-[--text-secondary]">{sb}</span>
+                          <span className={`font-mono text-[13px] font-semibold ${bal >= 0 ? 'text-[--accent]' : 'text-[--danger]'}`}>
+                            ${bal.toFixed(2)}
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                <div className="card p-5">
+                  <h3 className="text-[11px] font-semibold text-[--text-muted] uppercase tracking-wider mb-4">Quick Reference</h3>
+                  <div className="space-y-3 text-[12px] text-[--text-secondary]">
+                    <div className="flex gap-2">
+                      <span className="text-[--accent]">→</span>
+                      <span>Arb % below 100% = guaranteed profit</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="text-[--accent]">→</span>
+                      <span>Positive odds: profit = (stake × odds/100)</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="text-[--accent]">→</span>
+                      <span>Negative odds: profit = (stake × 100/|odds|)</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="text-[--gold]">⚡</span>
+                      <span>Higher edge = better opportunity</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-          )}
-        </div>
+          </div>
+        </main>
       </div>
     </div>
   )

@@ -211,7 +211,8 @@ export default function CalculatorPage() {
                       </select>
                       <div className="relative">
                         <input
-                          type="number"
+                          type="text"
+                          inputMode="numeric"
                           className="input-field text-center font-mono text-2xl font-bold py-4"
                           placeholder="+150"
                           value={odds1}
@@ -234,7 +235,8 @@ export default function CalculatorPage() {
                       </select>
                       <div className="relative">
                         <input
-                          type="number"
+                          type="text"
+                          inputMode="numeric"
                           className="input-field text-center font-mono text-2xl font-bold py-4"
                           placeholder="-110"
                           value={odds2}

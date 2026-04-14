@@ -34,7 +34,7 @@ export default function HomePage() {
         <header className="border-b border-[--border] px-6 py-4">
           <div className="max-w-6xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-[--accent] flex items-center justify-center text-black font-black text-sm">G</div>
+              <div className="w-8 h-8 rounded-lg bg-[--accent] flex items-center justify-center text-white font-black text-sm">G</div>
               <span className="font-bold text-lg tracking-tight">GNL Hub</span>
             </div>
             <div className="flex items-center gap-2">

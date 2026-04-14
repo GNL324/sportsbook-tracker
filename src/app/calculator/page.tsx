@@ -51,7 +51,8 @@ export default function CalculatorPage() {
         const sb = sportsbookMap[line]
         if (sb && !detectedSbs.includes(sb)) detectedSbs.push(sb)
       }
-      if (line.match(/^[-+]\d+$/) && !detectedOdds.includes(line)) detectedOdds.push(line)
+      const cleanedOdds = line.replace(/\s/g, '')
+      if (cleanedOdds.match(/^[-+]\d+$/) && !detectedOdds.includes(cleanedOdds)) detectedOdds.push(cleanedOdds)
     }
     return { betType, event, sb1: detectedSbs[0] || '', sb2: detectedSbs[1] || '', odds1: detectedOdds[0] || '', odds2: detectedOdds[1] || '' }
   }

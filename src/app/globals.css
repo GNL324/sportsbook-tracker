@@ -34,6 +34,14 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+body.sbb-theme,
+.sbb-shell {
+  background:
+    radial-gradient(circle at top left, rgba(16, 185, 129, 0.16), transparent 26%),
+    radial-gradient(circle at top right, rgba(56, 189, 248, 0.14), transparent 22%),
+    linear-gradient(180deg, #061018 0%, #07131d 36%, #091520 100%);
+}
+
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #d0d0d5; border-radius: 3px; }
@@ -171,11 +179,12 @@ body {
 }
 
 .noise-bg { position: relative; }
-.noise-bg::before {
+.noise-bg::before,
+.sbb-shell::before {
   content: '';
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  opacity: 0.015;
+  opacity: 0.03;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
   pointer-events: none;
   z-index: 0;
@@ -193,4 +202,78 @@ body {
 }
 .animate-in {
   animation: fadeIn 0.3s ease-out;
+}
+
+.glass-panel {
+  position: relative;
+  background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04));
+  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow: 0 24px 80px rgba(0,0,0,0.28);
+  backdrop-filter: blur(18px);
+}
+
+.sbb-hero {
+  background:
+    linear-gradient(135deg, rgba(7, 16, 28, 0.94), rgba(6, 32, 38, 0.85)),
+    linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01));
+}
+
+.sbb-hero-glow {
+  background:
+    radial-gradient(circle at 20% 20%, rgba(52, 211, 153, 0.15), transparent 28%),
+    radial-gradient(circle at 82% 16%, rgba(56, 189, 248, 0.16), transparent 26%),
+    radial-gradient(circle at 52% 100%, rgba(15, 23, 42, 0.44), transparent 38%);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0.45rem 0.8rem;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.pill-green {
+  background: rgba(16, 185, 129, 0.14);
+  color: #86efac;
+  border: 1px solid rgba(16, 185, 129, 0.28);
+}
+
+.pill-blue {
+  background: rgba(56, 189, 248, 0.12);
+  color: #7dd3fc;
+  border: 1px solid rgba(56, 189, 248, 0.24);
+}
+
+.pill-gold {
+  background: rgba(245, 158, 11, 0.12);
+  color: #fcd34d;
+  border: 1px solid rgba(245, 158, 11, 0.24);
+}
+
+.timeline-dot {
+  height: 12px;
+  width: 12px;
+  border-radius: 999px;
+  flex-shrink: 0;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(255,255,255,0.08);
+}
+
+.timeline-done {
+  background: #34d399;
+  box-shadow: 0 0 0 6px rgba(52, 211, 153, 0.1);
+}
+
+.timeline-active {
+  background: #fbbf24;
+  box-shadow: 0 0 0 6px rgba(251, 191, 36, 0.1);
+}
+
+.timeline-upcoming {
+  background: rgba(255,255,255,0.12);
 }

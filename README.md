@@ -1,6 +1,6 @@
-# 🎯 GNL Hub - Sportsbook Tracker & Workout Builder
+# 🎯 Sportsbook Tracker
 
-A comprehensive Next.js application for tracking sports betting arbitrage and building custom workout routines.
+Execution Cockpit for sports betting arbitrage tracking.
 
 ---
 
@@ -26,15 +26,6 @@ A comprehensive Next.js application for tracking sports betting arbitrage and bu
 - Track bet status (Pending/Won/Lost)
 - Profit/loss summary
 - Export to Excel (coming soon)
-
-### 🏋️ Workout Routine Builder
-- Browse cardio and strength exercises
-- Build custom workout routines
-- Reorder exercises with drag-and-drop
-- Customize reps/duration per exercise
-- **Play Mode**: Guided workout with timers
-- Auto-rest between exercises
-- Save routines to localStorage
 
 ---
 
@@ -80,8 +71,7 @@ sportsbook-tracker/
 │   │   ├── calculator/        # Arbitrage calculator
 │   │   ├── tracker/           # Bankroll tracker
 │   │   ├── bets/              # Bet history
-│   │   ├── routine/           # Workout builder
-│   │   └── workout/           # Workout player
+
 │   ├── data/
 │   │   └── exercises.ts       # Exercise library
 │   └── components/            # Reusable components
@@ -109,8 +99,7 @@ sportsbook-tracker/
 | Calculator | `/calculator` | Arbitrage bet calculator |
 | Tracker | `/tracker` | Bankroll management |
 | Bets | `/bets` | Bet history logging |
-| Routine | `/routine` | Workout builder |
-| Workout | `/workout` | Workout player with timers |
+
 
 ---
 
@@ -120,7 +109,7 @@ All data is stored in **localStorage**:
 
 - `gnl_tracker_transactions` - Bankroll transactions
 - `gnl_bet_history` - Bet history
-- `gnl_workout_routines` - Saved workout routines
+
 
 **Note:** Data is browser-specific. Clearing cache will remove data.
 

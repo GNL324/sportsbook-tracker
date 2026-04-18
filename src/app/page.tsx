@@ -1,8 +1,6 @@
 'use client'
 
-import { SbbInteractivePanel } from '@/components/sbb/SbbInteractivePanel'
 import { SbbMockup } from '@/components/sbb/SbbMockup'
-import { SbbSessionControlPanel } from '@/components/sbb/SbbSessionControlPanel'
 
 export default function HomePage() {
   return (
@@ -28,10 +26,8 @@ export default function HomePage() {
           </div>
         </header>
 
-        <main className="flex-1 space-y-6">
+        <main className="flex-1">
           <SbbMockup />
-          <SbbInteractivePanel />
-          <SbbSessionControlPanel />
         </main>
       </div>
     </div>

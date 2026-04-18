@@ -1,6 +1,8 @@
 'use client'
 
+import { SbbInteractivePanel } from '@/components/sbb/SbbInteractivePanel'
 import { SbbMockup } from '@/components/sbb/SbbMockup'
+import { SbbSessionControlPanel } from '@/components/sbb/SbbSessionControlPanel'
 
 export default function HomePage() {
   return (
@@ -14,20 +16,22 @@ export default function HomePage() {
               </div>
               <div>
                 <div className="text-[11px] font-mono uppercase tracking-[0.26em] text-white/45">Shared Sportsbook Browser</div>
-                <div className="text-2xl font-black tracking-tight text-white mt-1">UI Mockup Preview</div>
+                <div className="text-2xl font-black tracking-tight text-white mt-1">Execution Cockpit LIVE</div>
               </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              <span className="pill pill-blue">UI ONLY MOCKUP</span>
-              <span className="pill pill-green">Dual-window cockpit</span>
-              <span className="text-[11px] font-mono uppercase tracking-[0.2em] text-white/38">v0.2.0</span>
+              <span className="pill pill-green">INTERACTIVE</span>
+              <span className="pill pill-blue">Dual-window control</span>
+              <span className="text-[11px] font-mono uppercase tracking-[0.2em] text-white/38">v0.3.0</span>
             </div>
           </div>
         </header>
 
-        <main className="flex-1">
+        <main className="flex-1 space-y-6">
           <SbbMockup />
+          <SbbInteractivePanel />
+          <SbbSessionControlPanel />
         </main>
       </div>
     </div>

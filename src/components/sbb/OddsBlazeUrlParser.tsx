@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { Sportsbook } from '@/lib/sbb'
 
 type ParsedOpportunity = {
@@ -32,6 +32,11 @@ export function OddsBlazeUrlParser({ onImport }: { onImport: (opp: ParsedOpportu
   const [input, setInput] = useState('')
   const [parsed, setParsed] = useState<ParsedOpportunity | null>(null)
   const [error, setError] = useState('')
+  const [isClient, setIsClient] = useState(false)
+
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
 
   const parseInput = () => {
     setError('')
@@ -72,6 +77,7 @@ export function OddsBlazeUrlParser({ onImport }: { onImport: (opp: ParsedOpportu
       <div className="text-[11px] font-mono uppercase tracking-[0.22em] text-emerald-400/80 mb-3">
         Option A: Manual Import
       </div>
+      
       <div className="text-white font-semibold mb-3">Paste from OddsBlaze</div>
       
       <div className="flex gap-2">

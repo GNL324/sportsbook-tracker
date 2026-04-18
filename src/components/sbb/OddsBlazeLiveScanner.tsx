@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { Sportsbook } from '@/lib/sbb'
 
 interface ArbitrageOpportunity {
@@ -87,7 +87,13 @@ const LIVE_OPPORTUNITIES: ArbitrageOpportunity[] = [
 
 export function OddsBlazeLiveScanner({ onSelect }: { onSelect: (opp: ArbitrageOpportunity) => void }) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
-  const [lastUpdate] = useState<string>(new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }))
+  const [lastUpdate, setLastUpdate] = useState<string>('--:--')
+  const [isClient, setIsClient] = useState(false)
+
+  useEffect(() => {
+    setIsClient(true)
+    setLastUpdate(new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }))
+  }, [])
 
   const handleSelect = (opp: ArbitrageOpportunity, index: number) => {
     setSelectedIndex(index)
@@ -102,8 +108,7 @@ export function OddsBlazeLiveScanner({ onSelect }: { onSelect: (opp: ArbitrageOp
   }
 
   return (
-    <div className="glass-panel rounded-[20px] p-4 border border-amber-500/30"
-    >
+    <div className="glass-panel rounded-[20px] p-4 border border-amber-500/30">
       <div className="flex items-center justify-between mb-3">
         <div>
           <div className="text-[11px] font-mono uppercase tracking-[0.22em] text-amber-400/80 mb-1">

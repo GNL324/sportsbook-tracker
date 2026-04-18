@@ -1,5 +1,6 @@
 export type Sportsbook = 'draftkings' | 'betmgm' | 'betrivers' | 'thescore'
 
+/** Legacy / dashboard execution states (granular). */
 export type LaneState =
   | 'idle'
   | 'reserved'
@@ -14,6 +15,23 @@ export type LaneState =
   | 'blocked'
   | 'released'
 
+/** Interactive cockpit lane states (strict progression for operator UI). */
+export type InteractiveLaneState =
+  | 'reserved'
+  | 'attached'
+  | 'verifying'
+  | 'ready_to_confirm'
+  | 'recovering'
+
+/** Cockpit / session readiness (interactive layer). */
+export type CockpitReadiness =
+  | 'unknown'
+  | 'needs_auth'
+  | 'needs_page_recovery'
+  | 'verifying'
+  | 'ready'
+
+/** Legacy readiness labels used by tracker dashboard. */
 export type ReadinessState =
   | 'ready_for_execution'
   | 'ready_after_navigation'
@@ -24,6 +42,8 @@ export type ReadinessState =
   | 'unknown'
 
 export type PairReadiness = 'green' | 'yellow' | 'red'
+
+export type ConfidenceLevel = 'low' | 'medium' | 'high'
 
 export type OpportunityLeg = {
   sportsbook: Sportsbook
@@ -47,8 +67,8 @@ export type Lane = {
   state: LaneState
   readiness: ReadinessState
   windowLabel: string
-  eventConfidence: 'low' | 'medium' | 'high'
-  marketConfidence: 'low' | 'medium' | 'high'
+  eventConfidence: ConfidenceLevel
+  marketConfidence: ConfidenceLevel
   betslipHealthy: boolean
   blocker?: string
 }
@@ -85,6 +105,38 @@ export const readinessLabels: Record<ReadinessState, string> = {
   unknown: 'Unknown',
 }
 
+export const interactiveLaneStateLabels: Record<InteractiveLaneState, string> = {
+  reserved: 'Reserved',
+  attached: 'Attached',
+  verifying: 'Verifying',
+  ready_to_confirm: 'Ready to Confirm',
+  recovering: 'Recovering',
+}
+
+export const cockpitReadinessLabels: Record<CockpitReadiness, string> = {
+  unknown: 'Unknown',
+  needs_auth: 'Needs Auth',
+  needs_page_recovery: 'Needs Page Recovery',
+  verifying: 'Verifying',
+  ready: 'Ready',
+}
+
+const interactiveTransitions: Record<InteractiveLaneState, InteractiveLaneState[]> = {
+  reserved: ['attached', 'recovering'],
+  attached: ['reserved', 'verifying', 'recovering'],
+  verifying: ['attached', 'ready_to_confirm', 'recovering'],
+  ready_to_confirm: ['verifying', 'recovering'],
+  recovering: ['reserved', 'attached'],
+}
+
+export function isValidInteractiveLaneTransition(
+  from: InteractiveLaneState,
+  to: InteractiveLaneState,
+): boolean {
+  if (from === to) return true
+  return interactiveTransitions[from]?.includes(to) ?? false
+}
+
 export function mapOpportunityToLanes(opportunity: Opportunity): Lane[] {
   const first = createLane('A', opportunity.legA.sportsbook)
   const second = createLane('B', opportunity.legB.sportsbook)
@@ -103,7 +155,9 @@ function createLane(id: 'A' | 'B', sportsbook: Sportsbook): Lane {
     eventConfidence: conservative ? 'medium' : 'high',
     marketConfidence: conservative ? 'medium' : 'high',
     betslipHealthy: !conservative,
-    blocker: conservative ? 'Higher-friction book, prefer fresh-tab recovery before deeper execution.' : undefined,
+    blocker: conservative
+      ? 'Higher-friction book, prefer fresh-tab recovery before deeper execution.'
+      : undefined,
   }
 }
 

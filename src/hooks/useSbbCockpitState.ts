@@ -90,8 +90,9 @@ export function useSbbCockpitState() {
   useEffect(() => {
     const loaded = loadCockpitState()
     if (loaded) {
-      setSnapshot(loaded)
-      setPairReadiness(computePair(loaded))
+      const repaired = cloneSnapshot(loaded)
+      setSnapshot(repaired)
+      setPairReadiness(computePair(repaired))
     }
   }, [])
 
@@ -244,4 +245,3 @@ export function useSbbCockpitState() {
     resetCockpit,
   }
 }
-

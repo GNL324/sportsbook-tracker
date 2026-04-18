@@ -134,6 +134,86 @@ export function createDefaultSessionState(): SbbSessionState {
 const STORAGE_KEY = 'sbb-session-state-v1';
 const LEGACY_STORAGE_KEY = 'sbb-cockpit-v1';
 
+function isBookSessionState(value: unknown): value is BookSessionState {
+  return Boolean(
+    value &&
+      typeof value === 'object' &&
+      'sportsbook' in value &&
+      'attached' in value &&
+      'windowLabel' in value
+  );
+}
+
+function isLaneSnapshot(value: unknown): value is LaneSessionSnapshot {
+  return Boolean(
+    value &&
+      typeof value === 'object' &&
+      'sportsbook' in value &&
+      'attached' in value &&
+      'betslipHealthy' in value &&
+      'windowLabel' in value
+  );
+}
+
+function isSessionState(value: unknown): value is SbbSessionState {
+  return Boolean(value && typeof value === 'object' && 'books' in value);
+}
+
+function isCockpitState(value: unknown): value is SbbSessionStateV1 {
+  return Boolean(value && typeof value === 'object' && 'lanes' in value && 'intake' in value);
+}
+
+function normalizeSessionState(parsed: unknown): SbbSessionState | null {
+  if (!isSessionState(parsed) || !parsed.books || typeof parsed.books !== 'object') {
+    return null;
+  }
+
+  const fresh = createDefaultSessionState();
+  const mergedBooks = { ...fresh.books };
+
+  (Object.keys(fresh.books) as Sportsbook[]).forEach((book) => {
+    const candidate = parsed.books[book];
+    if (isBookSessionState(candidate)) {
+      mergedBooks[book] = { ...fresh.books[book], ...candidate, sportsbook: book };
+    }
+  });
+
+  return {
+    books: mergedBooks,
+    lastUpdated: typeof parsed.lastUpdated === 'string' ? parsed.lastUpdated : null,
+  };
+}
+
+function normalizeCockpitState(parsed: unknown): SbbSessionStateV1 | null {
+  if (!isCockpitState(parsed) || !parsed.lanes || !parsed.intake) {
+    return null;
+  }
+
+  const fresh = buildDefaultSessionState();
+  const laneA = isLaneSnapshot(parsed.lanes.A) ? parsed.lanes.A : null;
+  const laneB = isLaneSnapshot(parsed.lanes.B) ? parsed.lanes.B : null;
+
+  return {
+    lanes: {
+      A: { ...fresh.lanes.A, ...(laneA ?? {}) },
+      B: { ...fresh.lanes.B, ...(laneB ?? {}) },
+    },
+    intake: {
+      event: typeof parsed.intake.event === 'string' ? parsed.intake.event : fresh.intake.event,
+      market: typeof parsed.intake.market === 'string' ? parsed.intake.market : fresh.intake.market,
+      legA: {
+        ...fresh.intake.legA,
+        ...(parsed.intake.legA && typeof parsed.intake.legA === 'object' ? parsed.intake.legA : {}),
+      },
+      legB: {
+        ...fresh.intake.legB,
+        ...(parsed.intake.legB && typeof parsed.intake.legB === 'object' ? parsed.intake.legB : {}),
+      },
+    },
+    lastUpdated: typeof parsed.lastUpdated === 'string' ? parsed.lastUpdated : null,
+  };
+}
+
 /** Load session state from localStorage (safe for SSR) */
 export function loadSessionState(): SbbSessionState | null {
   if (typeof window === 'undefined') {
@@ -146,15 +226,15 @@ export function loadSessionState(): SbbSessionState | null {
       return null;
     }
 
-    const parsed = JSON.parse(stored) as SbbSessionState;
-    
-    // Validate structure
-    if (!parsed.books || typeof parsed.books !== 'object') {
+    const parsed = JSON.parse(stored) as unknown;
+    const normalized = normalizeSessionState(parsed);
+
+    if (!normalized) {
       console.warn('Invalid session state structure, resetting');
       return null;
     }
 
-    return parsed;
+    return normalized;
   } catch (err) {
     console.error('Failed to load session state:', err);
     return null;
@@ -172,7 +252,15 @@ export function loadCockpitState(): SbbSessionStateV1 | null {
     if (!stored) {
       return null;
     }
-    return JSON.parse(stored) as SbbSessionStateV1;
+    const parsed = JSON.parse(stored) as unknown;
+    const normalized = normalizeCockpitState(parsed);
+
+    if (!normalized) {
+      console.warn('Invalid cockpit state structure, resetting');
+      return null;
+    }
+
+    return normalized;
   } catch (err) {
     console.error('Failed to load cockpit state:', err);
     return null;
@@ -190,9 +278,13 @@ export function saveSessionState(state: SbbSessionState | SbbSessionStateV1): vo
       ...state,
       lastUpdated: new Date().toISOString(),
     };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(stateWithTimestamp));
-    // Also save to legacy key for compatibility
-    localStorage.setItem(LEGACY_STORAGE_KEY, JSON.stringify(stateWithTimestamp));
+    if ('books' in state) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(stateWithTimestamp));
+    }
+
+    if ('lanes' in state) {
+      localStorage.setItem(LEGACY_STORAGE_KEY, JSON.stringify(stateWithTimestamp));
+    }
   } catch (err) {
     console.error('Failed to save session state:', err);
   }

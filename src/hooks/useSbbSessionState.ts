@@ -60,7 +60,7 @@ export function useSbbSessionState(): UseSbbSessionStateReturn {
    */
   const updateBookState = useCallback((book: Sportsbook, patch: BookStatePatch) => {
     setSessionState(prev => {
-      const currentBook = prev.books[book];
+      const currentBook = prev.books[book] ?? createDefaultSessionState().books[book];
       const updatedBook: BookSessionState = { ...currentBook, ...patch };
       
       // Auto-update readiness based on new state
@@ -90,7 +90,8 @@ export function useSbbSessionState(): UseSbbSessionStateReturn {
    */
   const recomputeReadiness = useCallback(() => {
     setSessionState(prev => {
-      const updatedBooks: Record<Sportsbook, BookSessionState> = { ...prev.books };
+      const defaults = createDefaultSessionState().books;
+      const updatedBooks: Record<Sportsbook, BookSessionState> = { ...defaults, ...prev.books };
       
       (Object.keys(updatedBooks) as Sportsbook[]).forEach(book => {
         const { readiness, blocker } = evaluateBookReadiness(updatedBooks[book]);

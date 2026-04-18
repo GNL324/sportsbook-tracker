@@ -36,8 +36,25 @@ export type LaneFlagKey =
 
 type CockpitSnapshot = SbbSessionStateV1
 
+/** Validate and repair snapshot structure */
 function cloneSnapshot(snapshot: CockpitSnapshot): CockpitSnapshot {
-  return JSON.parse(JSON.stringify(snapshot)) as CockpitSnapshot
+  // Safety: ensure required structure exists (handles corrupted localStorage)
+  const base = JSON.parse(JSON.stringify(snapshot)) as CockpitSnapshot
+  
+  if (!base.lanes || !base.lanes.A || !base.lanes.B) {
+    const fresh = buildDefaultSessionState(demoOpportunity)
+    // Merge any valid data from corrupted state
+    return {
+      ...fresh,
+      lanes: {
+        A: { ...fresh.lanes.A, ...(base.lanes?.A || {}) },
+        B: { ...fresh.lanes.B, ...(base.lanes?.B || {}) },
+      },
+      intake: base.intake || fresh.intake,
+    }
+  }
+  
+  return base
 }
 
 function bookInputFromLane(lane: LaneSessionSnapshot): import('@/lib/sbbSessionStore').BookSessionState {
@@ -227,3 +244,4 @@ export function useSbbCockpitState() {
     resetCockpit,
   }
 }
+

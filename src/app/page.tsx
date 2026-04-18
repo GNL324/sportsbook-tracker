@@ -3,6 +3,7 @@
 import { SbbInteractivePanel } from '@/components/sbb/SbbInteractivePanel'
 import { SbbMockup } from '@/components/sbb/SbbMockup'
 import { SbbSessionControlPanel } from '@/components/sbb/SbbSessionControlPanel'
+import { OddsBlazeIntegrator } from '@/components/sbb/OddsBlazeIntegrator'
 
 export default function HomePage() {
   return (
@@ -23,12 +24,13 @@ export default function HomePage() {
             <div className="flex flex-wrap items-center gap-3">
               <span className="pill pill-green">INTERACTIVE</span>
               <span className="pill pill-blue">Dual-window control</span>
-              <span className="text-[11px] font-mono uppercase tracking-[0.2em] text-white/38">v0.3.0</span>
+              <span className="text-[11px] font-mono uppercase tracking-[0.2em] text-white/38">v0.4.0</span>
             </div>
           </div>
         </header>
 
         <main className="flex-1 space-y-6">
+          <OddsBlazeIntegrator />
           <SbbMockup />
           <SbbInteractivePanel />
           <SbbSessionControlPanel />

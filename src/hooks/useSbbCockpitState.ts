@@ -7,9 +7,10 @@ import { demoOpportunity, isValidInteractiveLaneTransition } from '@/lib/sbb'
 import { evaluatePairReadiness, type PairReadinessResult } from '@/lib/sbbReadiness'
 import {
   buildDefaultSessionState,
-  loadSessionState,
-  resetSessionState as clearPersistedSession,
+  loadCockpitState,
+  clearPersistedSession,
   saveSessionState,
+  type BookSessionState,
   type LaneSessionSnapshot,
   type SbbSessionStateV1,
 } from '@/lib/sbbSessionStore'
@@ -39,14 +40,20 @@ function cloneSnapshot(snapshot: CockpitSnapshot): CockpitSnapshot {
   return JSON.parse(JSON.stringify(snapshot)) as CockpitSnapshot
 }
 
-function bookInputFromLane(lane: LaneSessionSnapshot) {
+function bookInputFromLane(lane: LaneSessionSnapshot): import('@/lib/sbbSessionStore').BookSessionState {
   return {
     sportsbook: lane.sportsbook,
     attached: lane.attached,
-    betslipHealthy: lane.betslipHealthy,
-    eventConfidence: lane.eventConfidence,
-    marketConfidence: lane.marketConfidence,
     lastVerifiedAt: lane.lastVerifiedAt,
+    readiness: lane.laneState === 'ready_to_confirm' ? 'ready' : 
+               lane.laneState === 'attached' ? 'attached_unverified' :
+               lane.laneState === 'recovering' ? 'recovering' :
+               lane.laneState === 'reserved' ? 'unattached' : 'unattached',
+    blocker: lane.blocker,
+    windowLabel: lane.windowLabel,
+    notes: '',
+    healthy: lane.betslipHealthy,
+    recovering: lane.laneState === 'recovering',
   }
 }
 
@@ -64,7 +71,7 @@ export function useSbbCockpitState() {
   )
 
   useEffect(() => {
-    const loaded = loadSessionState()
+    const loaded = loadCockpitState()
     if (loaded) {
       setSnapshot(loaded)
       setPairReadiness(computePair(loaded))

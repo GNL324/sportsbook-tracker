@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react'
 import { OddsBlazeUrlParser } from './OddsBlazeUrlParser'
 import { OddsBlazeLiveScanner, type ArbitrageOpportunity } from './OddsBlazeLiveScanner'
+import { OddsBlazeExtensionImport } from './OddsBlazeExtensionImport'
 import { useSbbCockpitState } from '@/hooks/useSbbCockpitState'
+import type { Sportsbook } from '@/lib/sbb'
 
 const STORAGE_KEY = 'oddsblaze_live_feed'
 const ODDSBLAZE_URL = 'https://oddsblaze.com/arbitrage'
@@ -157,6 +159,28 @@ async function fetchOddsBlazeOpportunities(): Promise<ArbitrageOpportunity[]> {
   throw lastError ?? new Error('Unable to fetch OddsBlaze data')
 }
 
+interface ExtensionOpportunity {
+  edge: number
+  market: string
+  event: string
+  legA: {
+    sportsbook: string
+    bookCode: string
+    side: string
+    line: string
+    odds: string
+    betUrl?: string
+  }
+  legB: {
+    sportsbook: string
+    bookCode: string
+    side: string
+    line: string
+    odds: string
+    betUrl?: string
+  }
+}
+
 export function OddsBlazeIntegrator() {
   const [isMounted, setIsMounted] = useState(false)
   const [lastImported, setLastImported] = useState<string | null>(null)
@@ -164,6 +188,7 @@ export function OddsBlazeIntegrator() {
   const [lastUpdated, setLastUpdated] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [opportunities, setOpportunities] = useState<ArbitrageOpportunity[]>([])
+  const [importedOpportunities, setImportedOpportunities] = useState<ExtensionOpportunity[]>([])
   
   // Defer hook call until after mount to avoid SSR issues
   const cockpitState = useSbbCockpitState()
@@ -219,6 +244,48 @@ export function OddsBlazeIntegrator() {
     }
   }
 
+  const handleExtensionImport = (importedOps: ExtensionOpportunity[]) => {
+    if (!isMounted) return
+    
+    setImportedOpportunities(importedOps)
+    
+    // Import the first opportunity to populate the form
+    if (importedOps.length > 0) {
+      const first = importedOps[0]
+      
+      // Populate intake fields with full bet URLs
+      cockpitState.updateIntakeField('event', first.event || '')
+      cockpitState.updateIntakeField('market', `${first.market || 'Player Props'} - ${first.legA.side} ${first.legA.line}`)
+      
+      // Set leg A with bet URL
+      cockpitState.updateIntakeField('legA.sportsbook', first.legA.sportsbook || '')
+      cockpitState.updateIntakeField('legA.side', first.legA.side || '')
+      cockpitState.updateIntakeField('legA.odds', first.legA.odds || '')
+      cockpitState.updateIntakeField('legA.betUrl', first.legA.betUrl || '')
+      
+      // Set leg B with bet URL
+      cockpitState.updateIntakeField('legB.sportsbook', first.legB.sportsbook || '')
+      cockpitState.updateIntakeField('legB.side', first.legB.side || '')
+      cockpitState.updateIntakeField('legB.odds', first.legB.odds || '')
+      cockpitState.updateIntakeField('legB.betUrl', first.legB.betUrl || '')
+
+      // Set lane assignments (cast to Sportsbook type)
+      cockpitState.setLaneSportsbook('A', first.legA.sportsbook as Sportsbook)
+      cockpitState.setLaneSportsbook('B', first.legB.sportsbook as Sportsbook)
+      cockpitState.setLaneState('A', 'attached')
+      cockpitState.setLaneState('B', 'attached')
+
+      setLastImported(`${first.edge}% ${first.legA.sportsbook}↔${first.legB.sportsbook} (${importedOps.length} total)`)
+    }
+    
+    // Scroll to interactive panel
+    if (typeof window !== 'undefined') {
+      setTimeout(() => {
+        document.getElementById('sbb-interactive-panel')?.scrollIntoView({ behavior: 'smooth' })
+      }, 100)
+    }
+  }
+
   const handleRefresh = async () => {
     setIsLoading(true)
     setError(null)
@@ -263,7 +330,7 @@ export function OddsBlazeIntegrator() {
       </div>
 
       {isMounted ? (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-4 lg:grid-cols-3">
           <OddsBlazeLiveScanner
             onSelect={handleImport}
             onRefresh={handleRefresh}
@@ -273,9 +340,10 @@ export function OddsBlazeIntegrator() {
             lastUpdated={getRelativeTimestamp(lastUpdated)}
           />
           <OddsBlazeUrlParser onImport={handleImport} />
+          <OddsBlazeExtensionImport onImport={handleExtensionImport} />
         </div>
       ) : (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-4 lg:grid-cols-3">
           <div className="glass-panel rounded-[20px] p-5 border border-amber-500/30 animate-pulse">
             <div className="h-4 bg-white/10 rounded w-3/4 mb-3"></div>
             <div className="space-y-2">
@@ -287,6 +355,13 @@ export function OddsBlazeIntegrator() {
           <div className="glass-panel rounded-[20px] p-5 border border-emerald-500/30 animate-pulse">
             <div className="h-4 bg-white/10 rounded w-3/4 mb-3"></div>
             <div className="h-10 bg-white/5 rounded"></div>
+          </div>
+          <div className="glass-panel rounded-[20px] p-5 border border-sky-500/30 animate-pulse">
+            <div className="h-4 bg-white/10 rounded w-3/4 mb-3"></div>
+            <div className="space-y-2">
+              <div className="h-8 bg-white/5 rounded"></div>
+              <div className="h-8 bg-white/5 rounded"></div>
+            </div>
           </div>
         </div>
       )}

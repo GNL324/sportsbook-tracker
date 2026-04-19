@@ -50,8 +50,8 @@ export interface SbbSessionStateV1 {
   intake: {
     event: string;
     market: string;
-    legA: { side: string; odds: string; sportsbook: Sportsbook };
-    legB: { side: string; odds: string; sportsbook: Sportsbook };
+    legA: { side: string; odds: string; sportsbook: Sportsbook; betUrl?: string };
+    legB: { side: string; odds: string; sportsbook: Sportsbook; betUrl?: string };
   };
   lastUpdated?: string | null;
 }

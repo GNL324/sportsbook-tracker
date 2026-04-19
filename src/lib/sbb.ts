@@ -50,6 +50,7 @@ export type OpportunityLeg = {
   side: string
   odds: string
   line?: string
+  betUrl?: string
 }
 
 export type Opportunity = {

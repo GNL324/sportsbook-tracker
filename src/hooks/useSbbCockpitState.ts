@@ -21,9 +21,11 @@ export type IntakeField =
   | 'legA.side'
   | 'legA.odds'
   | 'legA.sportsbook'
+  | 'legA.betUrl'
   | 'legB.side'
   | 'legB.odds'
   | 'legB.sportsbook'
+  | 'legB.betUrl'
 
 export type LaneFlagKey =
   | 'attached'
@@ -130,7 +132,7 @@ function useSbbCockpitStateInternal() {
           draft.intake.market = value
           return
         }
-        const [legKey, subKey] = field.split('.') as ['legA' | 'legB', 'side' | 'odds' | 'sportsbook']
+        const [legKey, subKey] = field.split('.') as ['legA' | 'legB', 'side' | 'odds' | 'sportsbook' | 'betUrl']
         const targetLeg = legKey === 'legA' ? draft.intake.legA : draft.intake.legB
         const laneId = legKey === 'legA' ? 'A' : 'B'
         if (subKey === 'side') {
@@ -145,6 +147,10 @@ function useSbbCockpitStateInternal() {
           const nextBook = value as Sportsbook
           targetLeg.sportsbook = nextBook
           draft.lanes[laneId].sportsbook = nextBook
+          return
+        }
+        if (subKey === 'betUrl') {
+          targetLeg.betUrl = value
         }
       })
     },

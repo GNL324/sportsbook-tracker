@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 
 import type { CockpitReadiness, ConfidenceLevel, InteractiveLaneState, Sportsbook } from '@/lib/sbb'
 import { demoOpportunity, isValidInteractiveLaneTransition } from '@/lib/sbb'
@@ -81,7 +81,7 @@ function computePair(snapshot: CockpitSnapshot): PairReadinessResult {
   )
 }
 
-export function useSbbCockpitState() {
+function useSbbCockpitStateInternal() {
   const [snapshot, setSnapshot] = useState<CockpitSnapshot>(() => buildDefaultSessionState(demoOpportunity))
   const [pairReadiness, setPairReadiness] = useState<PairReadinessResult>(() =>
     computePair(buildDefaultSessionState(demoOpportunity)),
@@ -244,4 +244,21 @@ export function useSbbCockpitState() {
     recomputePair,
     resetCockpit,
   }
+}
+
+type SbbCockpitStateValue = ReturnType<typeof useSbbCockpitStateInternal>
+
+const SbbCockpitStateContext = createContext<SbbCockpitStateValue | null>(null)
+
+export function SbbCockpitStateProvider({ children }: { children: ReactNode }) {
+  const value = useSbbCockpitStateInternal()
+  return <SbbCockpitStateContext.Provider value={value}>{children}</SbbCockpitStateContext.Provider>
+}
+
+export function useSbbCockpitState() {
+  const context = useContext(SbbCockpitStateContext)
+  if (!context) {
+    throw new Error('useSbbCockpitState must be used within SbbCockpitStateProvider')
+  }
+  return context
 }

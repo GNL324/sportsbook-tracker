@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import type { CockpitReadiness, InteractiveLaneState, Sportsbook } from '@/lib/sbb'
 import {
   cockpitReadinessLabels,
@@ -28,6 +29,54 @@ function pairTone(status: 'green' | 'yellow' | 'red') {
 
 function openSportsbookWindow(book: Sportsbook) {
   window.open(sportsbookUrls[book], '_blank', 'noopener,noreferrer')
+}
+
+function CopyBetUrlButton({ betUrl, label }: { betUrl?: string; label: string }) {
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = async () => {
+    if (!betUrl) return
+    try {
+      await navigator.clipboard.writeText(betUrl)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch (err) {
+      console.error('Failed to copy:', err)
+    }
+  }
+
+  if (!betUrl) {
+    return (
+      <div className="mb-5 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/50">
+        No bet URL configured
+      </div>
+    )
+  }
+
+  return (
+    <div className="mb-5 space-y-2">
+      <button
+        type="button"
+        onClick={handleCopy}
+        className={`flex w-full items-center justify-center rounded-2xl px-4 py-3 text-sm font-black uppercase tracking-[0.18em] transition ${
+          copied
+            ? 'bg-green-500 text-white'
+            : 'bg-blue-500 hover:bg-blue-400 text-white'
+        }`}
+      >
+        {copied ? '✓ Copied!' : `📋 Copy ${label} URL`}
+      </button>
+      <a
+        href={betUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block truncate text-xs text-blue-400 hover:text-blue-300"
+        title={betUrl}
+      >
+        {betUrl}
+      </a>
+    </div>
+  )
 }
 
 export function SbbInteractivePanel() {
@@ -101,12 +150,14 @@ export function SbbInteractivePanel() {
             title="Lane A intake"
             legKey="legA"
             leg={intake.legA}
+            betUrl={intake.legA.betUrl}
             onChange={(field, value) => updateIntakeField(field, value)}
           />
           <LegIntakeCard
             title="Lane B intake"
             legKey="legB"
             leg={intake.legB}
+            betUrl={intake.legB.betUrl}
             onChange={(field, value) => updateIntakeField(field, value)}
           />
         </div>
@@ -138,16 +189,19 @@ function LegIntakeCard({
   title,
   legKey,
   leg,
+  betUrl,
   onChange,
 }: {
   title: string
   legKey: 'legA' | 'legB'
-  leg: { sportsbook: Sportsbook; side: string; odds: string }
+  leg: { sportsbook: Sportsbook; side: string; odds: string; betUrl?: string }
+  betUrl?: string
   onChange: (field: IntakeField, value: string) => void
 }) {
   return (
     <div className="glass-panel rounded-[20px] p-4 md:p-5 border border-white/10">
       <div className="text-[11px] font-mono uppercase tracking-[0.22em] text-white/45 mb-4">{title}</div>
+      <CopyBetUrlButton betUrl={betUrl} label={title.replace(' intake', '')} />
       <div className="grid gap-4">
         <label className="sbb-field">
           <span className="sbb-label">Sportsbook</span>
@@ -170,6 +224,15 @@ function LegIntakeCard({
         <label className="sbb-field">
           <span className="sbb-label">Odds</span>
           <input className="sbb-input" value={leg.odds} onChange={(e) => onChange(`${legKey}.odds` as IntakeField, e.target.value)} />
+        </label>
+        <label className="sbb-field">
+          <span className="sbb-label">Bet URL</span>
+          <input
+            className="sbb-input"
+            value={betUrl ?? ''}
+            placeholder="Paste OddsBlaze BET link..."
+            onChange={(e) => onChange(`${legKey}.betUrl` as IntakeField, e.target.value)}
+          />
         </label>
       </div>
     </div>

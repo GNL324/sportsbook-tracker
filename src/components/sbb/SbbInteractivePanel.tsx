@@ -13,11 +13,21 @@ const sportsbooks: Sportsbook[] = ['draftkings', 'betmgm', 'betrivers', 'thescor
 const laneStates: InteractiveLaneState[] = ['reserved', 'attached', 'verifying', 'ready_to_confirm', 'recovering']
 const readinessStates: CockpitReadiness[] = ['unknown', 'needs_auth', 'needs_page_recovery', 'verifying', 'ready']
 const confidenceLevels = ['low', 'medium', 'high'] as const
+const sportsbookUrls: Record<Sportsbook, string> = {
+  betrivers: 'https://betrivers.com',
+  draftkings: 'https://sportsbook.draftkings.com',
+  betmgm: 'https://sports.betmgm.com',
+  thescore: 'https://thescore.bet',
+}
 
 function pairTone(status: 'green' | 'yellow' | 'red') {
   if (status === 'green') return 'pill-green'
   if (status === 'red') return 'pill-red'
   return 'pill-gold'
+}
+
+function openSportsbookWindow(book: Sportsbook) {
+  window.open(sportsbookUrls[book], '_blank', 'noopener,noreferrer')
 }
 
 export function SbbInteractivePanel() {
@@ -190,6 +200,14 @@ function LaneCard({
         </div>
         <div className="pill pill-blue">{lane.windowLabel === 'unassigned' ? 'Unassigned' : `Window ${lane.windowLabel}`}</div>
       </div>
+
+      <button
+        type="button"
+        className="mb-5 flex w-full items-center justify-center rounded-2xl bg-emerald-400 px-4 py-3 text-sm font-black uppercase tracking-[0.18em] text-slate-950 transition hover:bg-emerald-300"
+        onClick={() => openSportsbookWindow(lane.sportsbook)}
+      >
+        Open Bet Window
+      </button>
 
       <div className="grid gap-4 md:grid-cols-2">
         <label className="sbb-field md:col-span-2">

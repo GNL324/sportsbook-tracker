@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, createElement, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 
 import type { CockpitReadiness, ConfidenceLevel, InteractiveLaneState, Sportsbook } from '@/lib/sbb'
 import { demoOpportunity, isValidInteractiveLaneTransition } from '@/lib/sbb'
@@ -252,7 +252,7 @@ const SbbCockpitStateContext = createContext<SbbCockpitStateValue | null>(null)
 
 export function SbbCockpitStateProvider({ children }: { children: ReactNode }) {
   const value = useSbbCockpitStateInternal()
-  return <SbbCockpitStateContext.Provider value={value}>{children}</SbbCockpitStateContext.Provider>
+  return createElement(SbbCockpitStateContext.Provider, { value }, children)
 }
 
 export function useSbbCockpitState() {

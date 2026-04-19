@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "SBB OddsBlaze Bridge",
+  "version": "0.1.0",
+  "description": "Extracts supported OddsBlaze arbitrage rows and copies JSON for the SBB cockpit.",
+  "permissions": [
+    "activeTab",
+    "clipboardWrite",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://oddsblaze.com/*"
+  ],
+  "action": {
+    "default_title": "SBB OddsBlaze Bridge",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://oddsblaze.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "styles.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}

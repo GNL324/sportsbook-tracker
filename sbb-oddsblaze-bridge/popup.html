@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SBB OddsBlaze Bridge</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: Arial, sans-serif;
+      }
+      body {
+        margin: 0;
+        width: 380px;
+        background: #10151d;
+        color: #f3f4f6;
+      }
+      .wrap {
+        padding: 14px;
+      }
+      h1 {
+        margin: 0 0 6px;
+        font-size: 16px;
+      }
+      p {
+        margin: 0 0 12px;
+        color: #9ca3af;
+        font-size: 12px;
+      }
+      .actions {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      button {
+        flex: 1;
+        border: 0;
+        border-radius: 10px;
+        padding: 10px 12px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      button[data-kind="scan"] {
+        background: #f59e0b;
+        color: #111827;
+      }
+      button[data-kind="copy"] {
+        background: #2563eb;
+        color: white;
+      }
+      .status {
+        margin-bottom: 10px;
+        padding: 10px;
+        border-radius: 10px;
+        background: #17202c;
+        font-size: 12px;
+      }
+      pre {
+        margin: 0;
+        max-height: 360px;
+        overflow: auto;
+        white-space: pre-wrap;
+        word-break: break-word;
+        border-radius: 10px;
+        background: #0b0f15;
+        padding: 12px;
+        font-size: 11px;
+        line-height: 1.45;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>SBB OddsBlaze Bridge</h1>
+      <p>Scan the active OddsBlaze arbitrage page, filter to R/D/S/M, and copy SBB-ready JSON.</p>
+      <div class="actions">
+        <button type="button" id="scanButton" data-kind="scan">Scan Page</button>
+        <button type="button" id="copyButton" data-kind="copy">Copy JSON</button>
+      </div>
+      <div class="status" id="status">Ready</div>
+      <pre id="output">{}</pre>
+    </div>
+    <script src="popup.js"></script>
+  </body>
+  </html>

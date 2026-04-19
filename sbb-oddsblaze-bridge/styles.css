@@ -1,0 +1,66 @@
+#sbb-oddsblaze-bridge-panel {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 2147483647;
+  width: 240px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(9, 14, 21, 0.94);
+  color: #f9fafb;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  font-family: Arial, sans-serif;
+}
+
+#sbb-oddsblaze-bridge-panel .sbb-bridge__header {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+#sbb-oddsblaze-bridge-panel .sbb-bridge__actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+#sbb-oddsblaze-bridge-panel button {
+  flex: 1;
+  border: 0;
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+#sbb-oddsblaze-bridge-panel button[data-action="scan"] {
+  background: #f59e0b;
+  color: #111827;
+}
+
+#sbb-oddsblaze-bridge-panel button[data-action="copy"] {
+  background: #2563eb;
+  color: white;
+}
+
+#sbb-oddsblaze-bridge-panel .sbb-bridge__status {
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 8px 10px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+#sbb-oddsblaze-bridge-panel .sbb-bridge__status[data-tone="success"] {
+  color: #86efac;
+}
+
+#sbb-oddsblaze-bridge-panel .sbb-bridge__status[data-tone="warn"] {
+  color: #fde68a;
+}
+
+#sbb-oddsblaze-bridge-panel .sbb-bridge__status[data-tone="error"] {
+  color: #fca5a5;
+}

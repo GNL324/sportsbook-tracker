@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import type { Sportsbook } from '@/lib/sbb'
 
-interface ArbitrageOpportunity {
+export interface ArbitrageOpportunity {
   edge: number
   market: string
   event: string
@@ -25,75 +25,22 @@ interface ArbitrageOpportunity {
   }
 }
 
-// Live data from OddsBlaze (BetRivers, DraftKings, BetMGM, theScore only)
-const LIVE_OPPORTUNITIES: ArbitrageOpportunity[] = [
-  {
-    edge: 2.46,
-    market: 'Points + Rebounds + Assists',
-    event: 'Jordan Goodwin',
-    legA: { sportsbook: 'betrivers', bookCode: 'R', player: 'Jordan Goodwin', side: 'Over', line: '17.5', odds: '+117' },
-    legB: { sportsbook: 'draftkings', bookCode: 'D', player: 'Jordan Goodwin', side: 'Under', line: '17.5', odds: '-106' },
-  },
-  {
-    edge: 1.22,
-    market: 'Player Rebounds',
-    event: 'Rui Hachimura',
-    legA: { sportsbook: 'betmgm', bookCode: 'M', player: 'Rui Hachimura', side: 'Over', line: '3.5', odds: '+100' },
-    legB: { sportsbook: 'draftkings', bookCode: 'D', player: 'Rui Hachimura', side: 'Under', line: '3.5', odds: '+105' },
-  },
-  {
-    edge: 0.91,
-    market: 'Player Rebounds',
-    event: 'Desmond Bane',
-    legA: { sportsbook: 'betmgm', bookCode: 'M', player: 'Desmond Bane', side: 'Over', line: '4.5', odds: '+160' },
-    legB: { sportsbook: 'draftkings', bookCode: 'D', player: 'Desmond Bane', side: 'Under', line: '4.5', odds: '-154' },
-  },
-  {
-    edge: 0.80,
-    market: 'Player Rebounds',
-    event: 'Victor Wembanyama',
-    legA: { sportsbook: 'draftkings', bookCode: 'D', player: 'Victor Wembanyama', side: 'Over', line: '12.5', odds: '+125' },
-    legB: { sportsbook: 'betrivers', bookCode: 'R', player: 'Victor Wembanyama', side: 'Under', line: '12.5', odds: '-121' },
-  },
-  {
-    edge: 0.58,
-    market: 'Threes Made',
-    event: 'Jalen Green',
-    legA: { sportsbook: 'betrivers', bookCode: 'R', player: 'Jalen Green', side: 'Over', line: '2.5', odds: '+195' },
-    legB: { sportsbook: 'betmgm', bookCode: 'M', player: 'Jalen Green', side: 'Under', line: '2.5', odds: '-190' },
-  },
-  {
-    edge: 0.36,
-    market: 'Points + Assists',
-    event: 'Andre Drummond',
-    legA: { sportsbook: 'draftkings', bookCode: 'D', player: 'Andre Drummond', side: 'Over', line: '9.5', odds: '+137' },
-    legB: { sportsbook: 'betmgm', bookCode: 'M', player: 'Andre Drummond', side: 'Under', line: '9.5', odds: '-135' },
-  },
-  {
-    edge: 0.22,
-    market: 'Player Points',
-    event: 'Ausar Thompson',
-    legA: { sportsbook: 'betmgm', bookCode: 'M', player: 'Ausar Thompson', side: 'Over', line: '8.5', odds: '-115' },
-    legB: { sportsbook: 'betrivers', bookCode: 'R', player: 'Ausar Thompson', side: 'Under', line: '8.5', odds: '+116' },
-  },
-  {
-    edge: 0.12,
-    market: 'Threes Made',
-    event: 'Jalen Green',
-    legA: { sportsbook: 'betrivers', bookCode: 'R', player: 'Jalen Green', side: 'Over', line: '2.5', odds: '+195' },
-    legB: { sportsbook: 'draftkings', bookCode: 'D', player: 'Jalen Green', side: 'Under', line: '2.5', odds: '-194' },
-  },
-]
-
-export function OddsBlazeLiveScanner({ onSelect }: { onSelect: (opp: ArbitrageOpportunity) => void }) {
+export function OddsBlazeLiveScanner({
+  onSelect,
+  onRefresh,
+  opportunities,
+  isLoading,
+  error,
+  lastUpdated,
+}: {
+  onSelect: (opp: ArbitrageOpportunity) => void
+  onRefresh: () => void
+  opportunities: ArbitrageOpportunity[]
+  isLoading: boolean
+  error: string | null
+  lastUpdated: string | null
+}) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
-  const [lastUpdate, setLastUpdate] = useState<string>('--:--')
-  const [isClient, setIsClient] = useState(false)
-
-  useEffect(() => {
-    setIsClient(true)
-    setLastUpdate(new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }))
-  }, [])
 
   const handleSelect = (opp: ArbitrageOpportunity, index: number) => {
     setSelectedIndex(index)
@@ -117,13 +64,31 @@ export function OddsBlazeLiveScanner({ onSelect }: { onSelect: (opp: ArbitrageOp
           <div className="text-white font-semibold">OddsBlaze Opportunities</div>
         </div>
         <div className="text-right">
-          <div className="text-xs text-white/50">Updated {lastUpdate}</div>
-          <div className="text-[10px] text-emerald-400/70">{LIVE_OPPORTUNITIES.length} matches</div>
+          <div className="text-xs text-white/50">{lastUpdated ? `Last updated: ${lastUpdated}` : 'No refresh yet'}</div>
+          <div className="text-[10px] text-emerald-400/70">{opportunities.length} matches</div>
         </div>
       </div>
 
+      <div className="mb-3 flex items-center gap-3">
+        <button
+          type="button"
+          onClick={onRefresh}
+          disabled={isLoading}
+          className="rounded-lg bg-amber-500 px-3 py-2 text-sm font-semibold text-slate-950 transition hover:bg-amber-400 disabled:cursor-wait disabled:opacity-70"
+        >
+          {isLoading ? 'Refreshing...' : '🔄 Refresh'}
+        </button>
+        {isLoading && <div className="text-xs text-white/60">Pulling latest OddsBlaze data...</div>}
+      </div>
+
+      {error && (
+        <div className="mb-3 rounded-lg border border-rose-500/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
+          {error}
+        </div>
+      )}
+
       <div className="space-y-1 max-h-[280px] overflow-y-auto pr-1">
-        {LIVE_OPPORTUNITIES.map((opp, i) => (
+        {opportunities.map((opp, i) => (
           <button
             key={i}
             onClick={() => handleSelect(opp, i)}
@@ -150,6 +115,11 @@ export function OddsBlazeLiveScanner({ onSelect }: { onSelect: (opp: ArbitrageOp
             </div>
           </button>
         ))}
+        {opportunities.length === 0 && !isLoading && (
+          <div className="rounded-lg border border-white/10 bg-white/5 px-3 py-4 text-sm text-white/50">
+            No OddsBlaze opportunities available yet. Try Refresh.
+          </div>
+        )}
       </div>
     </div>
   )

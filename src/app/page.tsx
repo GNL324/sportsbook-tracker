@@ -1,11 +1,14 @@
 'use client'
 
+import { useState } from 'react'
+
 import { SbbInteractivePanel } from '@/components/sbb/SbbInteractivePanel'
-import { SbbMockup } from '@/components/sbb/SbbMockup'
 import { SbbSessionControlPanel } from '@/components/sbb/SbbSessionControlPanel'
 import { OddsBlazeIntegrator } from '@/components/sbb/OddsBlazeIntegrator'
 
 export default function HomePage() {
+  const [showSessionPanel, setShowSessionPanel] = useState(false)
+
   return (
     <div className="sbb-shell min-h-screen">
       <div className="mx-auto flex min-h-screen max-w-[1600px] flex-col px-5 py-5 md:px-8 md:py-8">
@@ -31,9 +34,27 @@ export default function HomePage() {
 
         <main className="flex-1 space-y-6">
           <OddsBlazeIntegrator />
-          <SbbMockup />
           <SbbInteractivePanel />
-          <SbbSessionControlPanel />
+          <section className="glass-panel rounded-[24px] p-5 md:p-6">
+            <button
+              type="button"
+              onClick={() => setShowSessionPanel((current) => !current)}
+              className="flex w-full items-center justify-between gap-4 text-left"
+              aria-expanded={showSessionPanel}
+            >
+              <div>
+                <div className="text-[11px] font-mono uppercase tracking-[0.22em] text-white/45">Advanced controls</div>
+                <div className="text-white font-bold text-xl mt-1">Shared Sportsbook Browser</div>
+              </div>
+              <span className="pill pill-blue">{showSessionPanel ? 'Hide' : 'Show'}</span>
+            </button>
+
+            {showSessionPanel && (
+              <div className="mt-5">
+                <SbbSessionControlPanel />
+              </div>
+            )}
+          </section>
         </main>
       </div>
     </div>

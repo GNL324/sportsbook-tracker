@@ -3,7 +3,6 @@
 import React from 'react';
 import type { Sportsbook } from '../../lib/sbb';
 import { useSbbSessionState } from '../../hooks/useSbbSessionState';
-import { evaluatePairReadiness } from '../../lib/sbbReadiness';
 
 const BOOK_DISPLAY_NAMES: Record<Sportsbook, string> = {
   draftkings: 'DraftKings',
@@ -39,8 +38,6 @@ export function SbbSessionControlPanel(): React.ReactElement {
 
   const books = Object.keys(sessionState.books) as Sportsbook[];
   const conservativeBooks: Sportsbook[] = ['betrivers', 'thescore'];
-  const aggressiveBooks: Sportsbook[] = ['draftkings', 'betmgm'];
-
   // Get pairs for display
   const pair1 = getPairReadiness('draftkings', 'betmgm');
   const pair2 = getPairReadiness('betrivers', 'thescore');
@@ -210,24 +207,6 @@ export function SbbSessionControlPanel(): React.ReactElement {
               <div className="text-xs text-gray-600">{pair.explanation}</div>
             </div>
           ))}
-        </div>
-      </div>
-
-      {/* Human Control Notice */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <div className="flex items-start gap-3">
-          <div className="text-blue-600 text-xl">👤</div>
-          <div>
-            <h4 className="font-medium text-blue-900">Human in the Loop</h4>
-            <p className="text-sm text-blue-700 mt-1">
-              This control panel prepares sessions for bet placement, but
-              <strong> the final "Place Bet" click is always performed by you</strong>.
-              SBB stops at "ready to confirm" — never auto-places bets.
-            </p>
-            <p className="text-xs text-blue-600 mt-2">
-              When both books show green (ready), you control the timing and execution of the actual wager.
-            </p>
-          </div>
         </div>
       </div>
     </div>

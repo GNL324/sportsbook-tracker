@@ -36,13 +36,6 @@ export function SbbInteractivePanel() {
 
   return (
     <section className="mt-10 grid gap-6 animate-in">
-      <div className="sbb-human-banner rounded-[22px] border border-amber-400/35 bg-amber-500/10 px-5 py-4 text-[14px] leading-relaxed text-amber-50">
-        <div className="text-[11px] font-mono uppercase tracking-[0.22em] text-amber-200/80 mb-2">Human boundary</div>
-        <div className="font-semibold text-white">
-          Automation stops at Ready to Confirm. Final Place Bet click is human-only.
-        </div>
-      </div>
-
       <div className="glass-panel rounded-[24px] p-5 md:p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between mb-6">
           <div>
